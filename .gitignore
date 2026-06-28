@@ -216,3 +216,35 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Data folders (Ignore contents, keep structure)
+data/augmented/*
+data/eval/*
+data/raw/*
+data/train/*
+
+# Ensure .gitkeep files are tracked so empty folders are preserved
+!data/augmented/.gitkeep
+!data/eval/.gitkeep
+!data/raw/.gitkeep
+!data/train/.gitkeep
+
+# Models (Ignore huge weights and checkpoints, keep structure)
+models/lora/*
+models/merged/*
+!models/lora/.gitkeep
+!models/merged/.gitkeep
+
+# Outputs (Ignore logs and metrics, keep structure)
+outputs/confusion_matrices/*
+outputs/metrics/*
+outputs/predictions/*
+!outputs/confusion_matrices/.gitkeep
+!outputs/metrics/.gitkeep
+!outputs/predictions/.gitkeep
+
+# Ignore Unsloth/HuggingFace checkpoints
+checkpoint-*
+*.safetensors
+*.gguf
+*.bin

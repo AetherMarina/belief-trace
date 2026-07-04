@@ -4,11 +4,8 @@ import logging
 from pathlib import Path
 from datasets import Dataset
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
-)
+from src.utils.logger import setup_logger
+
 logger = logging.getLogger(__name__)
 
 # Define paths securely relative to the project root
@@ -146,4 +143,5 @@ def main():
 
 
 if __name__ == "__main__":
+    setup_logger(process_name="prepare")
     main()

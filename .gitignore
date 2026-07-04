@@ -234,6 +234,7 @@ models/lora/*
 models/merged/*
 !models/lora/.gitkeep
 !models/merged/.gitkeep
+models/checkpoints/
 
 # Outputs (Ignore logs and metrics, keep structure)
 outputs/confusion_matrices/*

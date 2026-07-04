@@ -3,11 +3,9 @@ import logging
 from pathlib import Path
 from datasets import load_dataset
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
-)
+from src.utils.logger import setup_logger
+
+logger = logging.getLogger(__name__)
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 RAW_DIR = PROJECT_ROOT / "data" / "raw"
@@ -20,7 +18,7 @@ def export_subset(hf_file_name: str, output_name: str):
     """
     Downloads a specific JSON file from the HF repository.
     """
-    logging.info(f"Downloading {hf_file_name} from Hugging Face...")
+    logger.info(f"Downloading {hf_file_name} from Hugging Face...")
 
     try:
         # Use data_files to target the exact JSON file in the CBT-Bench repo
@@ -39,17 +37,19 @@ def export_subset(hf_file_name: str, output_name: str):
                 }
                 f.write(json.dumps(json_line, ensure_ascii=False) + "\n")
 
-        logging.info(f"Successfully exported {len(rows)} rows -> {output_file}")
+        logger.info(f"Successfully exported {len(rows)} rows -> {output_file}")
 
     except Exception as e:
-        logging.error(f"Failed to download or process {hf_file_name}: {e}")
+        logger.error(f"Failed to download or process {hf_file_name}: {e}")
 
 
 if __name__ == "__main__":
-    logging.info("Starting dataset download process...")
+    setup_logger(process_name="download")
+
+    logger.info("Starting dataset download process...")
 
     # Reminder: We use the 112-row 'test' file for our training, and the 20-row 'seed' for eval/baseline
     export_subset("core_fine_test.json", "cbtbench_core_beliefs_train")
     export_subset("core_fine_seed.json", "cbtbench_core_beliefs_eval")
 
-    logging.info("Download process completed.")
+    logger.info("Download process completed.")

@@ -1,0 +1,10 @@
+# ===================================================================
+# Belief-Trace: Inference & Generation Configuration
+# ===================================================================
+
+generation:
+  max_new_tokens: 128       # We don't need long text, just a list of beliefs
+  temperature: 0.1          # Very low temperature = high precision and determinism (no hallucinations)
+  top_p: 0.9                # Slight restriction of the vocabulary
+  repetition_penalty: 1.1   # Prevents the model from repeating the same belief multiple times
+  do_sample: true           # Allows temperature and top_p parameters to work

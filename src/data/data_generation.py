@@ -8,14 +8,11 @@ from typing import List, Tuple, Set, Optional
 
 from openai import OpenAI
 
-# 1. Configure Logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
-)
+from src.utils.logger import setup_logger
+
 logger = logging.getLogger(__name__)
 
-# 2. Project Constants
+# Project Constants
 PROJECT_ROOT: Path = Path(__file__).resolve().parent.parent.parent
 RAW_DIR: Path = PROJECT_ROOT / "data" / "raw"
 AUGMENTED_DIR: Path = PROJECT_ROOT / "data" / "augmented"
@@ -52,7 +49,7 @@ RARE_BELIEFS: Set[str] = {
     "I am immoral"
 }
 
-# 3. Initialization
+# Initialization
 random.seed(42)
 
 client = OpenAI(
@@ -222,6 +219,8 @@ def augment_dataset(input_file: Path, output_file: Path) -> None:
 
 
 if __name__ == "__main__":
+    setup_logger(process_name="generation")
+
     logger.info("Starting Dataset Augmentation Process...")
 
     in_path = RAW_DIR / "cbtbench_core_beliefs_train.jsonl"

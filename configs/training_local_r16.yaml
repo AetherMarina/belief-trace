@@ -1,0 +1,43 @@
+# ===================================================================
+# Belief-Trace: QLoRA Training Configuration
+# ===================================================================
+run_name: "local_r16"
+# --- Target Environment Options ---
+# For Local 4GB VRAM Test: meta-llama/Llama-3.2-1B-Instruct
+model_name: "meta-llama/Llama-3.2-1B-Instruct"
+max_seq_length: 1024
+
+# --- LoRA Parameters ---
+lora:
+  r: 16               # Rank: 16 is optimal for fine-grained semantic tasks
+  alpha: 16           # Usually set equal to 'r' in Unsloth
+  dropout: 0          # Must be 0 for Unsloth optimization
+  target_modules:
+    - "q_proj"
+    - "k_proj"
+    - "v_proj"
+    - "o_proj"
+    - "gate_proj"
+    - "up_proj"
+    - "down_proj"
+
+# --- Training Hyperparameters ---
+training:
+  per_device_train_batch_size: 2  # Keep at 2 locally
+  gradient_accumulation_steps: 4  # Simulates larger batch size (effective batch = 8)
+  learning_rate: 2.0e-4
+  num_train_epochs: 3             # 3 epochs is standard for fine-tuning text extraction
+  warmup_steps: 10
+  weight_decay: 0.01
+  optim: "adamw_8bit"             # 8-bit Adam heavily reduces optimizer memory overhead
+  seed: 42
+  logging_steps: 1
+  output_dir: "models/checkpoints/lora_local_r16"
+
+# --- Export Settings ---
+export:
+  save_lora: true
+  lora_save_path: "models/lora/belief-trace-adapter_r16"
+  export_gguf: false
+  gguf_save_path: "models/merged/belief-trace"
+  quantization_method: "q4_k_m"   # Recommended balance of speed and precision

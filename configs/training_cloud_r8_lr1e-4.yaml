@@ -1,0 +1,43 @@
+# ===================================================================
+# Belief-Trace: QLoRA Training Configuration
+# ===================================================================
+run_name: "cloud_r8_lr1e-4"
+# --- Target Environment Options ---
+# For Cloud 24GB VRAM Prod: meta-llama/Llama-3.1-8B-Instruct
+model_name: "meta-llama/Llama-3.1-8B-Instruct"
+max_seq_length: 2048
+
+# --- LoRA Parameters ---
+lora:
+  r: 8               # Rank: 16 is optimal for fine-grained semantic tasks
+  alpha: 8           # Usually set equal to 'r' in Unsloth
+  dropout: 0          # Must be 0 for Unsloth optimization
+  target_modules:     # MLP layers
+    - "q_proj"
+    - "k_proj"
+    - "v_proj"
+    - "o_proj"
+    - "gate_proj"
+    - "up_proj"
+    - "down_proj"
+
+# --- Training Hyperparameters ---
+training:
+  per_device_train_batch_size: 8  # Keep at 2 locally, bump to 8 on Cloud
+  gradient_accumulation_steps: 1
+  learning_rate: 1.0e-4
+  num_train_epochs: 3             # 3 epochs is standard for fine-tuning text extraction
+  warmup_steps: 10
+  weight_decay: 0.01
+  optim: "adamw_8bit"             # 8-bit Adam heavily reduces optimizer memory overhead
+  seed: 42
+  logging_steps: 1
+  output_dir: "models/checkpoints/lora_cloud_r8_lr1e-4"
+
+# --- Export Settings ---
+export:
+  save_lora: true
+  lora_save_path: "models/lora/belief-trace-adapter-cloud_r8_lr1e-4"
+  export_gguf: true              # Set to true only on Cloud to get the final local model
+  gguf_save_path: "models/merged/belief-trace"
+  quantization_method: "q4_k_m"   # Recommended balance of speed and precision

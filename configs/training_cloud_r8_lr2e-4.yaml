@@ -38,6 +38,6 @@ training:
 export:
   save_lora: true
   lora_save_path: "models/lora/belief-trace-adapter-cloud_r8_lr2e-4"
-  export_gguf: true              # Set to true only on Cloud to get the final local model
+  export_gguf: false              # Set to true only on Cloud to get the final local model
   gguf_save_path: "models/merged/belief-trace"
   quantization_method: "q4_k_m"   # Recommended balance of speed and precision

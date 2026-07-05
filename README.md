@@ -305,6 +305,8 @@ Belief-Trace is an experimental utility that fine-tunes and interfaces with prob
 
 Users must be aware of the following inherent limitations:
 
+**Dataset Negativity Bias:** The CBT-Bench dataset is rooted in Cognitive Behavioral Therapy, which inherently focuses on identifying and restructuring maladaptive or limiting schemas. Consequently, the predefined taxonomy consists entirely of negative core beliefs (e.g., *I am inadequate*, *I am unlovable*). Models fine-tuned exclusively on this data will develop a "negativity bias" and lack the representational capacity to map positive, resourceful, or adaptive beliefs. When presented with empowering narratives, the model may hallucinate or forcefully fit the text into a negative class. This limitation must be factored into any downstream evaluation or application.
+
 **Belief-Trace should strictly be treated as:**
 - An experimental NLP research system.
 - A structured text-analysis prototype.

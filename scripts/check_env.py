@@ -9,13 +9,8 @@ def check_environment():
 
     # 1. System & Python Info
     print("\n[1] SYSTEM & PYTHON")
+    print(f"Python Version: {sys.version.split()[0]}")
     print(f"Python Executable: {sys.executable}")
-
-    try:
-        pip_version = subprocess.check_output([sys.executable, "-m", "pip", "--version"]).decode('utf-8').strip()
-        print(f"Pip Version: {pip_version}")
-    except Exception as e:
-        print(f"Pip Version: Error reading pip ({e})")
 
     # 2. PyTorch & CUDA
     print("\n[2] PYTORCH & CUDA")
@@ -37,24 +32,8 @@ def check_environment():
     except ImportError:
         print("PyTorch is NOT installed.")
 
-    # 3. GPU Memory (GPUtil)
-    print("\n[3] GPU VRAM CAPABILITIES")
-    try:
-        import GPUtil
-        gpus = GPUtil.getGPUs()
-        if not gpus:
-            print("GPUtil could not detect any GPUs.")
-        for gpu in gpus:
-            print(f"GPU Name:     {gpu.name}")
-            print(f"Memory Total: {gpu.memoryTotal} MB")
-            print(f"Memory Free:  {gpu.memoryFree} MB")
-            print(f"Memory Used:  {gpu.memoryUsed} MB")
-            print(f"GPU Load:     {gpu.load * 100:.1f}%")
-    except ImportError:
-        print("GPUtil is NOT installed. Run: pip install gputil")
-
-    # 4. Critical Dependencies (Unsloth / LLM Stack)
-    print("\n[4] LLM DEPENDENCIES")
+    # 3. Critical Dependencies (Unsloth / LLM Stack)
+    print("\n[3] LLM DEPENDENCIES")
 
     # Check xformers
     try:

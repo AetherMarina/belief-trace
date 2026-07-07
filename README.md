@@ -1,16 +1,16 @@
-# Belief-Trace
+# 👣 BeliefTrace
 
-**Belief-Trace** is an experimental research project for extracting structured core beliefs from narrative text using instruction-tuned language models and parameter-efficient fine-tuning.
+**BeliefTrace** is an experimental research project for extracting structured core beliefs from narrative text using instruction-tuned language models and parameter-efficient fine-tuning.
 
 The project explores whether a model can map short free-form narratives to one or more predefined belief labels, such as beliefs related to inadequacy, rejection, safety, control, or worthiness.
 
-> **Important:** Belief-Trace is a research prototype. It must not be used for diagnosis, treatment, risk assessment, or other clinical decision-making.
+> **Important:** BeliefTrace is a research prototype. It must not be used for diagnosis, treatment, risk assessment, or other clinical decision-making.
 
 ---
 
 ## Goals
 
-Belief-Trace currently focuses on:
+BeliefTrace currently focuses on:
 
 - Fine-tuning instruction models for multi-label core-belief extraction.
 - Comparing a baseline model against LoRA/QLoRA-adapted models.
@@ -75,9 +75,10 @@ belief-trace/
 │   ├── raw/                    # Raw, unprocessed data
 │   └── train/                  # Training datasets
 ├── experiments/
-│   ├── exp01_baseline.md       # Documentation for baseline experiment
-│   ├── exp02_lora_r8.md        # Documentation for LoRA experiment with rank 8
-│   └── exp03_lora_r16.md       # Documentation for LoRA experiment with rank 16
+│   ├── dataset_manifests/       
+│   │   ├── phase*_manifest.py  # Augmentation experiments
+│   ├── exp*.md                 # Per-run configurations, metrics, and observations
+│   └── README.md               # Index of experiment records
 ├── models/
 │   ├── checkpoints/            # Intermediate Hugging Face Trainer checkpoints
 │   ├── lora/                   # LoRA (Low-Rank Adaptation) models
@@ -292,22 +293,22 @@ outputs/
 
 ### 5. Logging Standards
 
-Belief-Trace uses standard Python logging for project-level logs.
+BeliefTrace uses standard Python logging for project-level logs.
 * Runnable Scripts: Configure logging once at the entry point (setup_logger(process_name="...")).
 * Reusable Modules: Only instantiate a logger (logger = logging.getLogger(__name__)).
 * Training Metrics: Hugging Face Trainer logs can be piped into the same file via a custom TrainerCallback.
 
 ---
 
-## ⚠️ Ethical and Data Considerations
+## 🛡️ Ethical and Data Considerations
 
-Belief-Trace is an experimental utility that fine-tunes and interfaces with probabilistic Large Language Models (LLMs). Belief-related language is highly context-dependent, subjective, and can be ambiguous. 
+BeliefTrace is an experimental utility that fine-tunes and interfaces with probabilistic Large Language Models (LLMs). Belief-related language is highly context-dependent, subjective, and can be ambiguous. 
 
 Users must be aware of the following inherent limitations:
 
 **Dataset Negativity Bias:** The CBT-Bench dataset is rooted in Cognitive Behavioral Therapy, which inherently focuses on identifying and restructuring maladaptive or limiting schemas. Consequently, the predefined taxonomy consists entirely of negative core beliefs (e.g., *I am inadequate*, *I am unlovable*). Models fine-tuned exclusively on this data will develop a "negativity bias" and lack the representational capacity to map positive, resourceful, or adaptive beliefs. When presented with empowering narratives, the model may hallucinate or forcefully fit the text into a negative class. This limitation must be factored into any downstream evaluation or application.
 
-**Belief-Trace should strictly be treated as:**
+**BeliefTrace should strictly be treated as:**
 - An experimental NLP research system.
 - A structured text-analysis prototype.
 - A tool for studying model behavior, latent inference, and annotation design.

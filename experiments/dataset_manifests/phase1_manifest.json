@@ -1,0 +1,33 @@
+{
+  "dataset_name": "Phase 1 Augmented",
+  "generator_git_commit": "e95af56a31ccb9ce90257017214ccf515e8b001d",
+  "seed": 42,
+  "generated_at": "2026-06-21",
+  "total_examples": 276,
+  "composition": {
+    "cbt_bench_raw": 112,
+    "synthetic_augmented": 164
+  },
+  "rare_class_balancing": "Reactive class-aware augmentation (3x for rare, 1x for standard)",
+  "combined_class_counts": {
+    "I am worthless, waste": 92,
+    "I am helpless": 84,
+    "I am powerless, weak, vulnerable": 82,
+    "I am undesirable, unwanted": 80,
+    "I am defective": 78,
+    "I am unlovable": 74,
+    "I am bound to be rejected": 72,
+    "I am bound to be abandoned": 70,
+    "I am trapped": 68,
+    "I am a victim": 66,
+    "I am a failure, loser": 54,
+    "I am bound to be alone": 52,
+    "I am out of control": 52,
+    "I am bad - dangerous, toxic, evil": 44,
+    "I am immoral": 40,
+    "I am incompetent": 36,
+    "I don’t deserve to live": 32,
+    "I am unattractive": 24,
+    "I am needy": 20
+  }
+}

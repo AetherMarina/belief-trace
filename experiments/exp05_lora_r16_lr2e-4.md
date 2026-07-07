@@ -5,6 +5,14 @@
 - **Context:** The most aggressive configuration in the matrix, combining maximum adapter capacity with the higher learning rate.
 - **Objective:** Test if combining a large parameter rank with an intense optimization speed yields faster convergence and superior semantic mapping across all categories.
 
+## Dataset Provenance
+- **Dataset:** Phase 1 Augmented (CBT-Bench + Baseline Synthetic)
+- **Generator Version:** `git tag phase1` (Commit: `e95af56a31ccb9ce90257017214ccf515e8b001d`)
+- **Generation Date:** 2026-06-21
+- **Total Training Examples:** 276
+- **Rare-Class Balancing:** class-aware synthetic augmentation, with 3 examples generated for rare classes and 1 for other classes
+- **Manifest:** [`experiments/dataset_manifests/phase1_manifest.json`](./dataset_manifests/phase1_manifest.json)
+
 ## Summary Metrics
 
 | Metric | Value | Description |

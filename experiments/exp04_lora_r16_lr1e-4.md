@@ -5,6 +5,14 @@
 - **Context:** Transitioning to a higher-capacity adapter while dropping back to the conservative learning rate used in Experiment 02.
 - **Objective:** Determine if expanding the trainable rank parameters allows the model to capture more complex latent representations without overshooting on a stable learning rate.
 
+## Dataset Provenance
+- **Dataset:** Phase 1 Augmented (CBT-Bench + Baseline Synthetic)
+- **Generator Version:** `git tag phase1` (Commit: `e95af56a31ccb9ce90257017214ccf515e8b001d`)
+- **Generation Date:** 2026-06-21
+- **Total Training Examples:** 276
+- **Rare-Class Balancing:** class-aware synthetic augmentation, with 3 examples generated for rare classes and 1 for other classes
+- **Manifest:** [`experiments/dataset_manifests/phase1_manifest.json`](./dataset_manifests/phase1_manifest.json)
+
 ## Summary Metrics
 
 | Metric | Value | Description                                                                                                                    |

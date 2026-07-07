@@ -5,6 +5,14 @@
 - **Context:** Hyperparameter adjustment based on Experiment 02, doubling the learning rate while keeping the conservative rank fixed.
 - **Objective:** Test whether a more aggressive optimization push allows the Rank 8 adapter to map complex, low-support cognitive schemas effectively.
 
+## Dataset Provenance
+- **Dataset:** Phase 1 Augmented (CBT-Bench + Baseline Synthetic)
+- **Generator Version:** `git tag phase1` (Commit: `e95af56a31ccb9ce90257017214ccf515e8b001d`)
+- **Generation Date:** 2026-06-21
+- **Total Training Examples:** 276
+- **Rare-Class Balancing:** class-aware synthetic augmentation, with 3 examples generated for rare classes and 1 for other classes
+- **Manifest:** [`experiments/dataset_manifests/phase1_manifest.json`](./dataset_manifests/phase1_manifest.json)
+
 ## Summary Metrics
 
 | Metric | Value | Description |

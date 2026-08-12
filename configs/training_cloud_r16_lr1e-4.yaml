@@ -23,7 +23,7 @@ lora:
 
 # --- Training Hyperparameters ---
 training:
-  per_device_train_batch_size: 8  # Keep at 2 locally, bump to 8 on Cloud
+  per_device_train_batch_size: 8
   gradient_accumulation_steps: 1
   learning_rate: 1.0e-4
   num_train_epochs: 3             # 3 epochs is standard for fine-tuning text extraction

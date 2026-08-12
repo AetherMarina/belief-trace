@@ -37,7 +37,7 @@ training:
 # --- Export Settings ---
 export:
   save_lora: true
-  lora_save_path: "models/lora/belief-trace-adapter_r16"
+  lora_save_path: "models/lora/belief-trace-adapter_local_r16"
   export_gguf: false
   gguf_save_path: "models/merged/belief-trace"
   quantization_method: "q4_k_m"   # Recommended balance of speed and precision

@@ -21,7 +21,6 @@ DATA_EVAL_DIR.mkdir(parents=True, exist_ok=True)
 
 # Input file names reflecting the semantic raw data layer
 TRAIN_FILE = DATA_RAW_DIR / "cbtbench_core_beliefs_train.jsonl"
-AUGMENTED_FILE = DATA_AUG_DIR / "cbtbench_core_beliefs_augmented.jsonl"
 EVAL_FILE = DATA_RAW_DIR / "cbtbench_core_beliefs_eval.jsonl"
 
 
@@ -89,7 +88,12 @@ def main():
     # --- STEP 1: Training Data (Original Raw + Augmented) ---
     logger.info("Loading semantic training and synthetic data...")
     train_raw = load_jsonl(TRAIN_FILE)
-    train_aug = load_jsonl(AUGMENTED_FILE)
+    
+    # Load all augmented files from the directory
+    train_aug = []
+    for file_path in DATA_AUG_DIR.glob("*.jsonl"):
+        logger.info(f"Loading augmented data from {file_path}...")
+        train_aug.extend(load_jsonl(file_path))
 
     combined_train_data = train_raw + train_aug
 

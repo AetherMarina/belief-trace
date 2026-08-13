@@ -10,16 +10,17 @@ from trl import SFTTrainer, SFTConfig
 
 from src.training.callbacks import FileLoggingCallback
 from src.utils.logger import setup_logger
+from src.utils.paths import resolve_dynamic_model_path
 
-
+PROJECT_ROOT: Path = Path(__file__).resolve().parent.parent.parent
 logger = logging.getLogger(__name__)
 
 
-def load_config(config_path: str) -> dict:
+def load_config(config_name: str) -> dict:
     """Loads the YAML configuration file."""
-    path = Path(config_path)
+    path = PROJECT_ROOT / "configs" / config_name
     if not path.exists():
-        raise FileNotFoundError(f"Configuration file not found: {config_path}")
+        raise FileNotFoundError(f"Configuration file not found: {config_name}")
 
     with open(path, "r", encoding="utf-8") as file:
         return yaml.safe_load(file)
@@ -28,16 +29,14 @@ def load_config(config_path: str) -> dict:
 def main():
     # Parse Command Line Arguments
     parser = argparse.ArgumentParser(description="Belief-Trace LoRA Fine-Tuning Pipeline")
-    parser.add_argument(
-        "--config",
-        type=str,
-        default="configs/training_local_r8.yaml",
-        help="Path to the training configuration YAML file."
-    )
+    parser.add_argument("--run-name", type=str, required=True,
+                        help="Name of the run/config (e.g., cloud_r8_lr2e-4)")
+    parser.add_argument("--exp-tag", type=str, default="",
+                        help="Optional experiment identifier (e.g., exp1, exp3)")
     args = parser.parse_args()
 
-    logger.info(f"Loading configuration from {args.config}...")
-    config = load_config(args.config)
+    logger.info(f"Loading configuration {args.run_name}, experiment {args.exp_tag}...")
+    config = load_config(f"training_{args.run_name}.yaml")
 
     # Extract Parameters from Config
     model_name = config["model_name"]
@@ -126,7 +125,11 @@ def main():
 
     # Handle Exporting based on YAML config
     if config["export"]["save_lora"]:
-        lora_path = config["export"]["lora_save_path"]
+        lora_path = resolve_dynamic_model_path(
+            base_path=config["export"]["lora_save_path"],
+            run_name=args.run_name,
+            exp_tag=args.exp_tag
+        )
         logger.info(f"Saving trained LoRA adapters to {lora_path}...")
         model.save_pretrained(lora_path)
         tokenizer.save_pretrained(lora_path)

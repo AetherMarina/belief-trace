@@ -52,8 +52,11 @@ RARE_BELIEFS: Set[str] = {
 # Initialization
 random.seed(42)
 
+MODEL_NAME = "gemini-2.5-pro"
+MODEL_URL = "https://generativelanguage.googleapis.com/v1beta/openai/"
+
 client = OpenAI(
-    base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
+    base_url=MODEL_URL,
     api_key=os.environ.get("GEMINI_API_KEY")
 )
 
@@ -121,7 +124,7 @@ Requirements:
     for attempt in range(max_retries):
         try:
             response = client.chat.completions.create(
-                model="gemini-2.5-pro",
+                model=MODEL_NAME,
                 messages=[
                     {"role": "system", "content": "You are an expert clinical psychologist and CBT researcher."},
                     {"role": "user", "content": prompt}

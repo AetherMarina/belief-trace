@@ -17,6 +17,8 @@ from sklearn.metrics import (
 from unsloth import FastLanguageModel
 from src.utils.logger import setup_logger
 from src.utils.constants import BELIEF_LABELS, BASELINE_MODELS, MAX_SEQ_LENGTH
+from src.utils.paths import resolve_dynamic_model_path
+
 
 logger = logging.getLogger(__name__)
 
@@ -57,10 +59,13 @@ def main():
     parser.add_argument("--mode", type=str, choices=["baseline", "lora"], required=True)
     parser.add_argument("--run-name", type=str, required=True,
                         help="Used for config lookup and file naming (e.g. cloud_r8_lr2e-4)")
+    parser.add_argument("--exp-tag", type=str, default="",
+                        help="Optional experiment identifier (e.g., exp1, exp3)")
     args = parser.parse_args()
 
     # Dynamic Suffix for all outputs
-    suffix = f"_{args.run_name}"
+    exp_prefix = f"_{args.exp_tag}" if args.exp_tag else ""
+    suffix = f"{exp_prefix}_{args.run_name}"
 
     if args.mode == "baseline":
         try:
@@ -81,8 +86,15 @@ def main():
 
         # Extract the output path directly from the training section of the YAML
         # Make sure it resolves to an absolute path based on PROJECT_ROOT
-        yaml_lora_save_path = config["export"]["lora_save_path"]
+        yaml_lora_save_path = resolve_dynamic_model_path(
+            base_path=config["export"]["lora_save_path"],
+            run_name=args.run_name,
+            exp_tag=args.exp_tag
+        )
         model_path = str(PROJECT_ROOT / yaml_lora_save_path)
+
+        if not Path(model_path).exists():
+            raise FileNotFoundError(f"Fine-tuned model adapter not found at: {model_path}")
 
     # Output file paths with dynamic suffix
     output_metrics_file = PROJECT_ROOT / "outputs" / "metrics" / f"evaluation_report_{args.mode}{suffix}.json"

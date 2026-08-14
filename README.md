@@ -92,20 +92,24 @@ belief-trace/
 │   └── predictions/            # Model predictions
 ├── src/
 │   ├── data/
-│   │   ├── data_generation.py  # Script for generating synthetic data
-│   │   ├── download_data.py    # Script for downloading raw data
-│   │   └── prepare_dataset.py  # Script for preprocessing and preparing datasets
+│   │   ├── data_generation.py             # Script for generating synthetic data
+│   │   ├── data_generation_*.py           # Scripts for generating additional synthetic data based on different criteria
+│   │   ├── download_data.py               # Script for downloading raw data
+│   │   └── prepare_dataset.py             # Script for preprocessing and preparing datasets
 │   ├── evaluation/
-│   │   └── evaluate_model.py   # Script for evaluating fine-tuned models
+│   │   └── evaluate_model.py   # Script for evaluating base and fine-tuned models
 │   ├── training/
 │   │   ├── callbacks.py        # Training metric logging callbacks
 │   │   └── train_lora.py       # Script for training models with LoRA
 │   └── utils/
-│       ├── constants.py      # Master taxonomy (BELIEF_LABELS)
-│       ├── logger.py         # Custom logging and HF Trainer bridging
+│       ├── constants.py        # Master taxonomy (BELIEF_LABELS)
+│       ├── logger.py           # Custom logging and HF Trainer bridging
 │       └── extract_taxonomy.py # Utility to scrape unique classes from datasets
 ├── scripts/                
-│   └── check_env.py            # Infrastructure check script
+│   ├── check_env.py                      # Infrastructure check script
+│   ├── compare_different_experiments.py  # Aggregates and prints the ablation summary table
+│   ├── run_cloud_experiments.sh
+│   └── run_local_experiments.sh
 ├── .gitignore                  # Specifies intentionally untracked files to ignore
 ├── README.md                   # Project README file
 └── requirements.txt            # Python dependencies for the project
@@ -154,35 +158,38 @@ The augmentation script (`data_generation.py`) utilizes the standard `openai` Py
 *Recommendation:* We strongly advise using a large, frontier-class LLM (e.g., Gemini 1.5 Pro, GPT-4o, Llama 3 70B+) for data generation. Inferring latent cognitive beliefs from text requires high-capacity reasoning that smaller models struggle to maintain consistently.
 
 ```bash
-python -m src.data.download_data     # 1. Ingest raw data into data/raw
+python -m src.data.download_data               # 1. Ingest raw data into data/raw
 
 # Set the API key for your chosen provider
 export GEMINI_API_KEY="your_api_key_here"
 
-python -m src.data.data_generation   # 2. Synthetic augmentation into data/augmented
-python -m src.data.prepare_dataset   # 3. Preprocessing and alignment into data/train
+python -m src.data.data_generation             # 2.a Synthetic augmentation into data/augmented
+python -m src.data.prepare_dataset             # 3. Preprocessing and alignment into data/train
 ```
+**Important Data Pipeline Rule**:
+To experiment with specialized synthetic runs (Experiments 2–5), substitute step 2.a with python -m src.data.data_generation_*.
+When testing a variation, always include the base augmentation (`python -m src.data.data_generation`).
 
 ### 4. Run Training
 For local testing (RTX 3050 - 4GB): Uses Llama-3.2-1B-Instruct.
 ```bash
-python -m src.training.train_lora --config configs/training_local.yaml
+python -m src.training.train_lora --run-name local_r8 --exp-tag exp1
 ```
 For cloud training (RTX 3090/4090 - 24GB): Uses Llama-3.1-8B-Instruct.
 ```bash
-python -m src.training.train_lora --config configs/training_cloud16.yaml
+python -m src.training.train_lora --run-name cloud_r16_lr2e --exp-tag exp1
 ```
 
 ### 5. Run Evaluation
 Evaluate the baseline (untrained) model:
 ```bash
-python -m src.evaluation.evaluate_model --mode baseline --run-name local
+python -m src.evaluation.evaluate_model --mode baseline --run-name local --exp-tag exp1
 ```
 *Note: Use --run-name cloud or local for baseline evaluation.*
 
 Evaluate a LoRA-adapted model:
 ```bash
-python -m src.evaluation.evaluate_model --mode lora --run-name cloud_r16_lr2e-4
+python -m src.evaluation.evaluate_model --mode lora --run-name cloud_r16_lr2e-4 --exp-tag exp1
 ```
 *Note: The --run-name should match the suffix of your training config file (e.g., cloud_r16_lr2e-4).*
 
@@ -197,15 +204,86 @@ If you want to run the full suite of baseline evaluations and LoRA hyperparamete
 
 For Cloud Environments:
 ```bash
-chmod +x run_cloud_experiments.sh
-./run_cloud_experiments.sh
+chmod +x scripts/run_cloud_experiments.sh
+./scripts/run_cloud_experiments.sh
 ```
 
 For Local Environments:
 ```bash
-chmod +x run_local_experiments.sh
-./run_local_experiments.sh
+chmod +x scripts/rrun_local_experiments.sh
+./scripts/run_local_experiments.sh
 ```
+
+## Comparing Experiments (Ablation Analysis)
+
+To generate a comparative ablation matrix across your fine-tuning configuration runs, use the `compare_different_experiments.py` tracking script. 
+
+### Prerequisites
+The script expects all evaluation JSON outputs to be stored inside the outputs/metrics/ directory. It dynamically parses both the alphanumeric experiment tag and the training configuration directly from the filename using the following naming convention:
+`outputs/metrics/evaluation_report_lora_cloud_exp<tag>_<config>.json`
+
+*Example*: `evaluation_report_lora_cloud_exp1a_r8_lr1e-4.json` will be parsed as Experiment: **1a**, Configuration: **r8_lr1e-4**.
+
+### Execution
+Run the script from the repository root directory:
+
+```bash
+python scripts/compare_different_experiments.py
+```
+Expected Output:
+```text
+-------- Experiment Evaluation Summary Matrix ---------
+experiment configuration  macro_f1  micro_f1  sample_f1
+         1    r8_lr2e-4  0.405712  0.489362   0.458508
+         2    r8_lr2e-4  0.424379  0.422222   0.427735
+         3    r8_lr2e-4  0.403894  0.441989   0.444812
+-------------------------------------------------------
+```
+
+## 📊 Statistical Significance Testing
+
+To estimate whether performance differences between fine-tuned experiments are likely to be real rather than artifacts of a small evaluation split, this repository uses **paired bootstrap resampling**.
+
+<details>
+<summary><b>Why Bootstrap over a standard T-Test? (Click to expand)</b></summary>
+
+Multi-label F1 scores such as Macro F1 and Micro F1 are corpus-level metrics computed from aggregated prediction counts. They are not simple normally distributed per-example measurements, so standard parametric tests such as a basic t-test are not ideal.
+
+**How the script works:**
+1. **Paired Indexing:** Draws N examples with replacement and evaluates both models on the exact same sampled indices.
+2. **Corpus Recalculation:** Recomputes Macro F1, Micro F1, and Samples F1 from scratch for each bootstrap sample.
+3. **Difference Mapping**: Computes the metric difference as Model B - Model A.
+4. **95% Confidence Interval:** After 10,000 iterations, the script reports the 2.5th and 97.5th percentiles of the bootstrap differences. If the interval excludes 0.0, the observed performance shift is treated as statistically meaningful at approximately the 95% confidence level.
+</details>
+
+### Execution
+Run the script from the repository root, passing your "Control" model and "Variant" model predictions:
+
+```bash
+python scripts/bootstrap_significance.py \
+  --predictions-model-a outputs/predictions/predictions_lora_exp1_cloud_r8_lr2e-4.jsonl \
+  --predictions-model-a outputs/predictions/predictions_lora_exp3_cloud_r8_lr2e-4.jsonl
+```
+Available Arguments:
+* `--predictions-model-a`: (Required) Path to predictions .jsonl for Model A (usually the Experiment 1 baseline champion).
+* `--predictions-model-a`: (Required) Path to predictions .jsonl for Model B.
+* `--iterations`: (Optional) Number of bootstrap iterations. Defaults to `10000`.
+* `--seed`: (Optional) Random seed for exact reproducibility. Defaults to `42`.
+
+
+<details><summary><b>Expected Output (Click to expand)</b></summary>
+```text
+============================================================
+ Bootstrap Significance Report (Model B - Model A) 
+============================================================
+   Metric Lower 2.5% Upper 97.5% Significant (95% CI excludes 0)
+ Macro F1     0.0012      0.0241                             YES
+ Micro F1    -0.0154      0.0089                              NO
+Samples F1   -0.0210     -0.0031                             YES
+============================================================
+Interpretation: If 'Significant' is YES, the performance difference
+is highly likely to be real, not just evaluation split noise.
+```</details>
 
 ---
 

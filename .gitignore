@@ -245,7 +245,7 @@ outputs/predictions/*
 !outputs/predictions/.gitkeep
 
 # Logs
-logs/
+belief_model/logs/
 
 # Ignore Unsloth/HuggingFace checkpoints
 checkpoint-*

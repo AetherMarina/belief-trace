@@ -1,4 +1,4 @@
-# 🧠 BeliefTrace — Belief Model
+# 🧠 Belief Model
 
 **Belief Model is the model component of BeliefTrace**. It is an experimental research module for extracting structured core beliefs from narrative text using instruction-tuned language models and parameter-efficient fine-tuning.
 

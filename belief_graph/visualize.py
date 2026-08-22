@@ -62,20 +62,20 @@ def build_visualization(
         )
 
         hover_text = (
-            f"<b>ID:</b> {belief_id}<br>"
-            f"<b>Entity:</b> {belief['entity_id']}<br>"
-            f"<b>Source:</b> {belief['source_id']}<br>"
-            f"<b>First seen:</b> Step {belief['first_seen_step']}<br>"
-            f"<b>Last seen:</b> Step {belief['last_seen_step']}<br>"
-            f"<b>Status:</b> {status.upper()}<br>"
-            f"<b>Model:</b> {belief['provenance']['model']}<br>"
-            f"<b>Prompt version:</b> "
+            f"ID: {belief_id}\n"
+            f"Entity: {belief['entity_id']}\n"
+            f"Source: {belief['source_id']}\n"
+            f"First seen: Step {belief['first_seen_step']}\n"
+            f"Last seen: Step {belief['last_seen_step']}\n"
+            f"Status: {status.upper()}\n"
+            f"Model: {belief['provenance']['model']}\n"
+            f"Prompt version:\n "
             f"{belief['provenance']['prompt_version']}"
         )
 
         if belief.get("evidence_span"):
             hover_text += (
-                f"<br><b>Evidence:</b> {belief['evidence_span']}"
+                f"\nEvidence: {belief['evidence_span']}"
             )
 
         if status == "active":
@@ -128,13 +128,13 @@ def build_visualization(
         provenance = transition.get("provenance", {})
 
         hover_text = (
-            f"<b>Transition:</b> {transition_id}<br>"
-            f"<b>Type:</b> {transition_type.upper()}<br>"
-            f"<b>Step:</b> {step}<br>"
-            f"<b>Affected belief:</b> {affected_belief_id}<br>"
-            f"<b>Reason:</b> {reason}<br>"
-            f"<b>Model:</b> {provenance.get('model', 'unknown')}<br>"
-            f"<b>Prompt version:</b> "
+            f"Transition: {transition_id}\n"
+            f"Type: {transition_type.upper()}\n"
+            f"Step: {step}\n"
+            f"Affected belief: {affected_belief_id}\n"
+            f"Reason: {reason}\n"
+            f"Model: {provenance.get('model', 'unknown')}\n"
+            f"Prompt version: "
             f"{provenance.get('prompt_version', 'unknown')}"
         )
 
@@ -158,7 +158,7 @@ def build_visualization(
                 affected_belief_id,
                 event_node_id,
                 title=(
-                    f"{transition_type.upper()} at Step {step}<br>"
+                    f"{transition_type.upper()} at Step {step}"
                     f"Reason: {reason}"
                 ),
                 color="#ff4d4d",

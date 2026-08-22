@@ -253,3 +253,6 @@ checkpoint-*
 *.gguf
 *.bin
 unsloth_compiled_cache/
+
+# Ignore belief graph artifacts
+belief_graph/outputs/

@@ -1,0 +1,5 @@
+pyvis==0.3.2
+openai==2.45.0
+pydantic==2.13.4
+networkx==3.6.1
+pandas==3.0.3

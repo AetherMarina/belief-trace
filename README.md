@@ -67,6 +67,8 @@ Together, they provide an experimental foundation for belief-aware and human-cen
 belief-trace/
 ├── belief_model/
 │   ├── README.md
+│   ├── requirements.txt
+│   ├── constraints.txt
 │   ├── configs/
 │   ├── data/
 │   ├── experiments/
@@ -77,7 +79,16 @@ belief-trace/
 │   └── src/
 │
 ├── belief_graph/
-│   └── README.md
+│   ├── README.md
+│   ├── requirements.txt
+│   ├── experiments/
+│   ├── evals/
+│   ├── examples/
+│   ├── config.py
+│   ├── core.py
+│   ├── providers.py
+│   ├── run_alice_demo.py
+│   └── visualize.py
 │
 ├── README.md
 └── LICENSE

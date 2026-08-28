@@ -41,6 +41,8 @@ python -m venv venv
 source venv/bin/activate
 
 pip install -r requirements.txt
+pip install -e .
+pip install -e ".[dev]"
 ```
 
 ### 2. Run the Alice in Wonderland Demo
@@ -54,7 +56,7 @@ python run_alice_demo.py
 
 1. The engine extracts Alice's initial absolute certainties (e.g., bravery).
 2. It processes subsequent chapters where her physical reality changes.
-3. The Cognitive Arbiter detects conflicts with active beliefs; the engine deprecates affected beliefs and creates SHATTERED transitions.
+3. The Cognitive Arbiter detects conflicts with active beliefs; the engine deprecates affected beliefs and creates SHATTERED and REFRAMED transitions. In v0.2, REFRAMED is used as a coarse transition category for non-negation contradictions, while SHATTERED represents direct negation or explicit abandonment of an existing belief.
 4. The output is saved as flat, machine-readable beliefs.jsonl and transitions.jsonl files in the outputs/ directory, which is git-ignored. 
 5. A frozen v0.1 example is available under examples/alice/.
 
@@ -104,8 +106,9 @@ v0.1 intentionally keeps the transition model minimal:
 - SHATTERED is the only supported transition type.
 - Belief recurrence/deduplication and direct replacement links are deferred to v0.2.
 
-### Future Roadmap (v0.2+)
+### Future Roadmap (v0.3+)
 
-* Advanced Transition Types: Adding REFRAMED, REINFORCED, and WEAKENED edges.
+* Advanced Transition Types: Adding CHALLENGED, REINFORCED, and WEAKENED edges.
 * BeliefTrace Integration: Adding core belief extraction layer.
 * Document Adapters: Automated POV extraction and speaker diarization for full-length books and therapy transcripts.
+* Extended Cognitive Networks: Transitioning from broad psychological categories to explicit entity-resolution mapping. Future versions will track the protagonist's evolving beliefs regarding specific significant figures and instrumental objects, modeling the exact relational network that shapes their cognitive state.

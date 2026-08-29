@@ -13,10 +13,97 @@ class BeliefStatus(str, Enum):
     CHALLENGED = "challenged"
     DEPRECATED = "deprecated"
 
+
+class CoreBeliefDomain(str, Enum):
+    SELF = "Self"
+    WORLD = "World"
+    OTHERS = "Others"
+
+
+class CoreBeliefLabel(str, Enum):
+    # --- SELF ---
+    CAPABLE = "Capable"
+    INCAPABLE = "Incapable"
+    WORTHY = "Worthy"
+    UNWORTHY = "Unworthy"
+    AUTONOMOUS = "Autonomous"
+    DEPENDENT = "Dependent"
+    RESILIENT = "Resilient"
+    VULNERABLE = "Vulnerable"
+
+    # --- WORLD ---
+    SAFE = "Safe"
+    DANGEROUS = "Dangerous"
+    PREDICTABLE = "Predictable"
+    UNPREDICTABLE = "Unpredictable"
+    CONTROLLABLE = "Controllable"
+    UNCONTROLLABLE = "Uncontrollable"
+    FAIR = "Fair"
+    UNFAIR = "Unfair"
+
+    # --- OTHERS ---
+    TRUSTWORTHY = "Trustworthy"
+    UNTRUSTWORTHY = "Untrustworthy"
+    ACCEPTING = "Accepting"
+    REJECTING = "Rejecting"
+    SUPPORTIVE = "Supportive"
+    UNSUPPORTIVE = "Unsupportive"
+    RELIABLE = "Reliable"
+    UNRELIABLE = "Unreliable"
+    COLLABORATIVE = "Collaborative"
+    EXPLOITATIVE = "Exploitative"
+    THREATENING = "Threatening"
+    HARMLESS = "Harmless"
+
+
+ALLOWED_CORE_BELIEF_LABELS: dict[
+    CoreBeliefDomain,
+    set[CoreBeliefLabel],
+] = {
+    CoreBeliefDomain.SELF: {
+        CoreBeliefLabel.CAPABLE,
+        CoreBeliefLabel.INCAPABLE,
+        CoreBeliefLabel.WORTHY,
+        CoreBeliefLabel.UNWORTHY,
+        CoreBeliefLabel.AUTONOMOUS,
+        CoreBeliefLabel.DEPENDENT,
+        CoreBeliefLabel.RESILIENT,
+        CoreBeliefLabel.VULNERABLE,
+    },
+
+    CoreBeliefDomain.WORLD: {
+        CoreBeliefLabel.SAFE,
+        CoreBeliefLabel.DANGEROUS,
+        CoreBeliefLabel.PREDICTABLE,
+        CoreBeliefLabel.UNPREDICTABLE,
+        CoreBeliefLabel.CONTROLLABLE,
+        CoreBeliefLabel.UNCONTROLLABLE,
+        CoreBeliefLabel.FAIR,
+        CoreBeliefLabel.UNFAIR,
+    },
+
+    CoreBeliefDomain.OTHERS: {
+        CoreBeliefLabel.TRUSTWORTHY,
+        CoreBeliefLabel.UNTRUSTWORTHY,
+        CoreBeliefLabel.ACCEPTING,
+        CoreBeliefLabel.REJECTING,
+        CoreBeliefLabel.SUPPORTIVE,
+        CoreBeliefLabel.UNSUPPORTIVE,
+        CoreBeliefLabel.COLLABORATIVE,
+        CoreBeliefLabel.EXPLOITATIVE,
+        CoreBeliefLabel.THREATENING,
+        CoreBeliefLabel.HARMLESS,
+        CoreBeliefLabel.RELIABLE,
+        CoreBeliefLabel.UNRELIABLE,
+    },
+}
+
+
 class TransitionType(str, Enum):
     SHATTERED = "shattered"
     REFRAMED = "reframed"
     # Future expansion: REINFORCED, etc.
+
 
 # ========================================================================
 # 2. PROVENANCE SCHEMAS
@@ -31,6 +118,7 @@ class InferenceProvenance(BaseModel):
     # We keep a tiny metadata dict here ONLY for truly unpredictable extras
     # (like prompt tokens used, if the API provides it)
     extra_meta: Dict[str, Any] = Field(default_factory=dict)
+
 
 # ========================================================================
 # 3. CORE SCHEMAS
@@ -52,6 +140,7 @@ class Belief(BaseModel):
 
     def _belief_to_text(self) -> str:
         return f"Subject: {self.subject}; Relation: {self.relation}; Object: {self.object}"
+
 
 class Transition(BaseModel):
     """Represents an edge explaining a cognitive state change between steps."""
@@ -83,6 +172,7 @@ class Transition(BaseModel):
 
         return self
 
+
 class BeliefObservation(BaseModel):
     """
     Records a specific instance where a belief was observed in the narrative.
@@ -96,6 +186,38 @@ class BeliefObservation(BaseModel):
     provenance: InferenceProvenance
 
 
+class CoreBelief(BaseModel):
+    core_belief_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    entity_id: str
+    domain: CoreBeliefDomain
+    label: str
+    first_seen_step: int
+    last_seen_step: int
+    status: BeliefStatus = BeliefStatus.ACTIVE
+    provenance: InferenceProvenance
+
+    @model_validator(mode="after")
+    def validate_domain_label(self):
+        allowed = ALLOWED_CORE_BELIEF_LABELS[self.domain]
+
+        if self.label not in allowed:
+            raise ValueError(
+                f"Label '{self.label}' is not valid "
+                f"for domain '{self.domain.value}'"
+            )
+
+        return self
+
+
+class SurfaceToCoreMapping(BaseModel):
+    mapping_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    surface_belief_id: str
+    core_belief_id: str
+    step: int
+    confidence_score: Optional[float] = None
+    provenance: InferenceProvenance
+
+
 # --- temporary LLM DATA TRANSFER OBJECTS (DTOs) ---
 
 class ExtractedTriplet(BaseModel):
@@ -103,6 +225,41 @@ class ExtractedTriplet(BaseModel):
     subject: Literal["Self", "World", "Others"]
     relation: str
     object: str
+
+
+class CoreBeliefMappingResult(BaseModel):
+    """LLM's response when mapping surface belief to core belief."""
+    is_core_belief: bool = Field(
+        description="True if the surface belief reflects a deep psychological schema."
+                    "False if it is a transient or situational thought."
+    )
+    domain: Optional[CoreBeliefDomain] = Field(
+        default=None,
+        description="The core domain. Must be null if is_core_belief is False."
+    )
+    label: Optional[CoreBeliefLabel] = Field(
+        default=None,
+        description="The taxonomy label. Must be null if is_core_belief is False."
+    )
+    confidence_score: float = Field(
+        default=1.0, ge=0.0, le=1.0,
+        description="Confidence in this mapping from 0.0 to 1.0"
+    )
+
+    @model_validator(mode="after")
+    def validate_mapping(self):
+        if self.is_core_belief:
+            if self.domain is None or self.label is None:
+                raise ValueError(
+                    "domain and label are required when is_core_belief=True"
+                )
+            if self.label not in ALLOWED_CORE_BELIEF_LABELS[self.domain]:
+                raise ValueError(
+                    f"{self.label.value} is not valid for "
+                    f"{self.domain.value}"
+                )
+        return self
+
 
 # ========================================================================
 # 2. INTERFACES (Protocols)
@@ -121,5 +278,11 @@ class LLMProvider(Protocol):
     def resolve_potential_contradiction(self, old_belief, triplet):
         """
         Classify type of contradiction.
+        """
+        ...
+
+    def map_to_core_belief(self, triplet: ExtractedTriplet) -> CoreBeliefMappingResult:
+        """
+        Evaluates a surface triplet and attempts to map it to a Core Belief taxonomy.
         """
         ...

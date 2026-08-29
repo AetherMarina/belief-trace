@@ -2,7 +2,7 @@ import logging
 from typing import List, Dict, Optional
 from .core import (
     Belief, BeliefObservation, Transition, BeliefStatus,
-    TransitionType, InferenceProvenance, ExtractedTriplet, LLMProvider
+    TransitionType, InferenceProvenance, ExtractedTriplet, LLMProvider, CoreBelief, SurfaceToCoreMapping
 )
 from .memory import BeliefMemory
 from .matching import SemanticBeliefMatcher, MatchType
@@ -38,6 +38,8 @@ class LongitudinalEngine:
         self.beliefs: Dict[str, Belief] = {}
         self.transitions: List[Transition] = []
         self.observations: Dict[str, BeliefObservation] = {}
+        self.core_beliefs: Dict[str, CoreBelief] = {}
+        self.surface_to_core_mappings: Dict[str, SurfaceToCoreMapping] = {}
 
     # --- Analytical Helpers ---
 
@@ -178,7 +180,7 @@ class LongitudinalEngine:
         )
         self.observations[observation.observation_id] = observation
 
-        # Only need to update the last_seen_step metadata in vector db
+        # Only update the last_seen_step metadata in vector db
         self.memory.update_metadata(belief)
 
     def _handle_different(self, entity_id: str, triplet: ExtractedTriplet, embedding: List[float], step: int,
@@ -207,6 +209,8 @@ class LongitudinalEngine:
 
         self.beliefs[new_belief.belief_id] = new_belief
         self.memory.add(new_belief, embedding)
+        # Run Core Belief mapping
+        self._process_core_mapping(entity_id, new_belief, triplet, step)
 
     def _handle_contradicts(self, entity_id: str, triplet: ExtractedTriplet, embedding: List[float], matched_id: str,
                             reason: str, step: int, source_id: str, evidence: str):
@@ -253,6 +257,10 @@ class LongitudinalEngine:
             provenance=self.transition_provenance
         )
         self.transitions.append(transition)
+
+        # 4. Run Core Belief mapping
+        self._process_core_mapping(entity_id, new_belief, triplet, step)
+
         logger.info("REFRAMED old=%s new=%s step=%s", old_belief.belief_id, new_belief.belief_id, step)
 
     def _handle_shattered(self, matched_id: str, reason: str, step: int):
@@ -274,11 +282,56 @@ class LongitudinalEngine:
         self.transitions.append(transition)
         logger.info("SHATTERED belief=%s step=%s", old_belief.belief_id, step)
 
+    def _process_core_mapping(self, entity_id: str, new_surface_belief: Belief, triplet: ExtractedTriplet, step: int):
+        """Attempts to map a surface belief to a core schema, maintaining the hierarchical graph structure."""
+
+        # 1. Evaluate the surface triplet via the LLM arbiter
+        mapping_result = self.llm_provider.map_to_core_belief(triplet)
+
+        if not mapping_result.is_core_belief or not mapping_result.domain or not mapping_result.label:
+            logger.debug(f"Triplet evaluated as situational/transient. No core mapping generated for {entity_id}.")
+            return
+
+        # 2. Check if this core schema already exists for the given entity
+        core_belief = None
+        for cb in self.core_beliefs.values():
+            if cb.entity_id == entity_id and cb.domain == mapping_result.domain and cb.label == mapping_result.label:
+                core_belief = cb
+                break
+
+        # 3. Instantiate a new CoreBelief node if no match is found
+        if not core_belief:
+            core_belief = CoreBelief(
+                entity_id=entity_id,
+                domain=mapping_result.domain,
+                label=mapping_result.label,
+                first_seen_step=step,
+                last_seen_step=step,
+                provenance=self.provenance
+            )
+            self.core_beliefs[core_belief.core_belief_id] = core_belief
+            logger.info(
+                f"Generated new CoreBelief for {entity_id}: {core_belief.domain.value} - {core_belief.label}")
+        else:
+            # Extend the temporal boundary of the existing core belief
+            core_belief.last_seen_step = step
+
+        # 4. Generate the hierarchical edge connecting the surface belief to the core schema
+        mapping_edge = SurfaceToCoreMapping(
+            surface_belief_id=new_surface_belief.belief_id,
+            core_belief_id=core_belief.core_belief_id,
+            step=step,
+            confidence_score=mapping_result.confidence_score,
+            provenance=self.provenance
+        )
+        self.surface_to_core_mappings[mapping_edge.mapping_id] = mapping_edge
+
     # --- Persistence ---
 
     def export_to_jsonl(self, beliefs_path: str = "beliefs.jsonl", transitions_path: str = "transitions.jsonl",
-                        observations_path: str = "observations.jsonl"):
-        """Exports the current graph state (including observations) to flat JSON Lines files."""
+                        observations_path: str = "observations.jsonl", core_beliefs_path: str = "core_beliefs.jsonl",
+                        surface_to_core_mappings_path: str = "surface_to_core_mappings.jsonl"):
+        """Exports the fully normalized graph state (Surface, Core, and Edges) to JSON Lines files."""
         with open(beliefs_path, "w", encoding="utf-8") as f:
             for belief in self.beliefs.values():
                 f.write(belief.model_dump_json() + "\n")
@@ -291,4 +344,13 @@ class LongitudinalEngine:
             for observation in self.observations.values():
                 f.write(observation.model_dump_json() + "\n")
 
-        logger.info(f"State successfully exported to '{beliefs_path}', '{transitions_path}' and '{observations_path}'")
+        with open(core_beliefs_path, "w", encoding="utf-8") as f:
+            for core_belief in self.core_beliefs.values():
+                f.write(core_belief.model_dump_json() + "\n")
+
+        with open(surface_to_core_mappings_path, "w", encoding="utf-8") as f:
+            for mapping in self.surface_to_core_mappings.values():
+                f.write(mapping.model_dump_json() + "\n")
+
+        logger.info(f"State successfully exported to '{beliefs_path}', '{transitions_path}', '{observations_path}',"
+                    f" '{core_beliefs_path}' and '{surface_to_core_mappings_path}'")

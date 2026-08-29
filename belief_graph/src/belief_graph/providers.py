@@ -4,10 +4,22 @@ import json
 import logging
 from pydantic import ValidationError
 
-from .core import LLMProvider, ExtractedTriplet, TransitionType, Belief
+from .core import LLMProvider, ExtractedTriplet, TransitionType, Belief, ALLOWED_CORE_BELIEF_LABELS, \
+    CoreBeliefMappingResult
 from .config import DEFAULT_MODEL, OLLAMA_BASE_URL, VERIFIER_MODEL
 
 logger = logging.getLogger(__name__)
+
+
+def generate_taxonomy_prompt() -> str:
+    """Dynamically builds the taxonomy rules for the LLM prompt."""
+    prompt_lines = ["You must choose a label strictly from the corresponding domain list:"]
+
+    for domain, labels in ALLOWED_CORE_BELIEF_LABELS.items():
+        label_strings = ", ".join(sorted([label.value for label in labels]))
+        prompt_lines.append(f"- If Domain is {domain.value}: Choose from [{label_strings}]")
+
+    return "\n".join(prompt_lines)
 
 
 class OllamaProvider(LLMProvider):
@@ -142,3 +154,54 @@ class OllamaProvider(LLMProvider):
         except Exception as e:
             logger.error(f"[OllamaProvider Error] Classification failed: {e}")
             return TransitionType.REFRAMED
+
+    def map_to_core_belief(self, triplet: ExtractedTriplet) -> CoreBeliefMappingResult:
+        """
+        Evaluates a surface triplet and attempts to map it to a Core Belief taxonomy.
+        """
+        taxonomy_instructions = generate_taxonomy_prompt()
+
+        system_prompt = f"""
+        You are an expert cognitive psychologist. Your task is to determine whether 
+        this surface belief expresses a higher-level, general belief about 
+        Self, World, or Others that could represent a Core Belief.
+
+        If the thought is just a situational reaction (e.g., "My boss is angry today"), 
+        set 'is_core_belief' to false and leave domain/label null.
+
+        If the thought represents a deep psychological schema (e.g., "People always reject me"), 
+        set 'is_core_belief' to true and classify it using EXACTLY one domain and one label 
+        from the following taxonomy:
+
+        {taxonomy_instructions}
+
+        You must return a JSON object with keys: 'is_core_belief' (boolean), 'domain' (string or null), 
+        'label' (string or null), and 'confidence_score' (float).
+        """
+
+        user_prompt = (
+            f"Analyze this surface belief:\n"
+            f"Subject: [{triplet.subject}]\n"
+            f"Relation: [{triplet.relation}]\n"
+            f"Object: [{triplet.object}]"
+        )
+
+        try:
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt}
+                ],
+                response_format={"type": "json_object"},
+                temperature=0.0
+            )
+
+            raw_content = response.choices[0].message.content
+            parsed_json = json.loads(raw_content)
+
+            return CoreBeliefMappingResult(**parsed_json)
+
+        except Exception as e:
+            logger.error(f"[OllamaProvider Error] Core mapping failed: {e}")
+            return CoreBeliefMappingResult(is_core_belief=False, confidence_score=0.0)

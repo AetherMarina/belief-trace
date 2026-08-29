@@ -21,39 +21,43 @@ def load_jsonl(filepath: str) -> list:
 
 
 def build_visualization(
-    beliefs_path: str = "outputs/beliefs.jsonl",
-    transitions_path: str = "outputs/transitions.jsonl",
-    output_html: str = "outputs/graph.html",
+        beliefs_path: str = "outputs/beliefs.jsonl",
+        transitions_path: str = "outputs/transitions.jsonl",
+        core_beliefs_path: str = "outputs/core_beliefs.jsonl",
+        surface_to_core_mappings_path: str = "outputs/surface_to_core_mappings.jsonl",
+        output_html: str = "outputs/graph.html",
 ):
     """
-    Render the Longitudinal Belief Graph.
+    Render the v0.2 Longitudinal Belief Graph.
 
-    v0.1 semantics:
-    - Beliefs are represented as nodes.
-    - ACTIVE beliefs are green.
-    - DEPRECATED beliefs are red.
-    - SHATTERED transitions are represented as explicit event nodes.
-    - A SHATTERED transition does NOT imply a direct replacement belief.
+    v0.2 semantics:
+    - Surface Beliefs (Triplets) are boxes.
+    - Core Beliefs (Taxonomy) are large ellipses.
+    - ACTIVE surface beliefs are green; DEPRECATED are red.
+    - SHATTERED/REFRAMED transitions are explicit event nodes.
+    - Surface-to-Core mappings are directed edges holding the graph together.
     """
 
     print("Loading data from JSONL artifacts...")
 
     beliefs = load_jsonl(beliefs_path)
     transitions = load_jsonl(transitions_path)
+    core_beliefs = load_jsonl(core_beliefs_path)
+    mappings = load_jsonl(surface_to_core_mappings_path)
 
-    if not beliefs:
-        print("[Error] No beliefs found to visualize. Run the demo first.")
+    if not beliefs and not core_beliefs:
+        print("[Error] No beliefs found to visualize. Run the engine first.")
         return
 
     g = nx.DiGraph()
 
     # ================================================================
-    # 1. BELIEF NODES
+    # 1. SURFACE BELIEF NODES
     # ================================================================
 
     for belief in beliefs:
         belief_id = belief["belief_id"]
-        status = belief["status"]
+        status = belief.get("status", "active")
 
         label = (
             f"[{belief['subject']}]\n"
@@ -62,50 +66,85 @@ def build_visualization(
         )
 
         hover_text = (
+            f"SURFACE BELIEF\n"
             f"ID: {belief_id}\n"
-            f"Entity: {belief['entity_id']}\n"
-            f"Source: {belief['source_id']}\n"
             f"First seen: Step {belief['first_seen_step']}\n"
             f"Last seen: Step {belief['last_seen_step']}\n"
-            f"Status: {status.upper()}\n"
-            f"Model: {belief['provenance']['model']}\n"
-            f"Prompt version:\n "
-            f"{belief['provenance']['prompt_version']}"
+            f"Status: {status.upper()}"
         )
 
-        if belief.get("evidence_span"):
-            hover_text += (
-                f"\nEvidence: {belief['evidence_span']}"
-            )
-
         if status == "active":
-            color = "#00cc66"
+            color = "#00cc66"  # Green[cite: 5]
             border_width = 3
-
         elif status == "deprecated":
-            color = "#ff4d4d"
+            color = "#ff4d4d"  # Red[cite: 5]
             border_width = 1
-
         else:
-            # CHALLENGED — currently future-facing in v0.1
-            color = "#ffb347"
+            color = "#ffb347"  # Orange[cite: 5]
             border_width = 2
 
         g.add_node(
             belief_id,
             label=label,
             title=hover_text,
-            color={
-                "background": color,
-                "border": "white",
-            },
-            shape="box",
+            color={"background": color, "border": "white"},
+            shape="box",  # Surface beliefs remain boxes[cite: 5]
             borderWidth=border_width,
             font={"color": "white"},
         )
 
     # ================================================================
-    # 2. TRANSITION EVENT NODES
+    # 2. CORE BELIEF NODES
+    # ================================================================
+
+    for cb in core_beliefs:
+        cb_id = cb["core_belief_id"]
+        domain = cb.get("domain", "Unknown")
+        label_val = cb.get("label", "Unknown")
+
+        node_label = f"CORE: {domain}\n{label_val}"
+
+        hover_text = (
+            f"CORE SCHEMA\n"
+            f"Entity: {cb.get('entity_id')}\n"
+            f"Domain: {domain}\n"
+            f"Label: {label_val}\n"
+            f"First seen: Step {cb.get('first_seen_step')}\n"
+            f"Last seen: Step {cb.get('last_seen_step')}"
+        )
+
+        g.add_node(
+            cb_id,
+            label=node_label,
+            title=hover_text,
+            color={"background": "#9b59b6", "border": "#8e44ad"},  # Deep purple
+            shape="ellipse",  # Visually distinct from surface boxes
+            borderWidth=3,
+            size=35,  # Slightly larger to act as visual anchors
+            font={"color": "white", "size": 16, "bold": True},
+        )
+
+    # ================================================================
+    # 3. SURFACE -> CORE MAPPING EDGES
+    # ================================================================
+
+    for mapping in mappings:
+        surface_id = mapping.get("surface_belief_id")
+        core_id = mapping.get("core_belief_id")
+
+        if surface_id in g.nodes and core_id in g.nodes:
+            g.add_edge(
+                surface_id,
+                core_id,
+                label="MAPS_TO",
+                title=f"Confidence: {mapping.get('confidence_score', 1.0)}",
+                color="#9b59b6",
+                width=2,
+                dashes=True  # Dashed line for abstraction mapping
+            )
+
+    # ================================================================
+    # 4. TRANSITION EVENT NODES
     # ================================================================
 
     for transition in transitions:
@@ -115,89 +154,53 @@ def build_visualization(
 
         transition_type = transition["transition_type"]
         step = transition["step"]
-        reason = transition["reason"]
+        reason = transition.get("reason", "")
 
-        # Separate graph-node ID so it can never collide with belief IDs.
         event_node_id = f"transition::{transition_id}"
 
-        event_label = (
-            f"{transition_type.upper()}\n"
-            f"T{step}"
-        )
-
-        provenance = transition.get("provenance", {})
+        event_label = f"{transition_type.upper()}\nT{step}"
 
         hover_text = (
-            f"Transition: {transition_id}\n"
             f"Type: {transition_type.upper()}\n"
-            f"Step: {step}\n"
-            f"Affected belief: {affected_belief_id}\n"
-            f"Reason: {reason}\n"
-            f"Model: {provenance.get('model', 'unknown')}\n"
-            f"Prompt version: "
-            f"{provenance.get('prompt_version', 'unknown')}"
+            f"Reason: {reason}"
         )
 
-        # Transition itself is explicitly visualized as an event.
+        # Transition explicitly visualized as an event
         g.add_node(
             event_node_id,
             label=event_label,
             title=hover_text,
-            color={
-                "background": "#8b1e1e",
-                "border": "#ff8080",
-            },
+            color={"background": "#8b1e1e", "border": "#ff8080"},
             shape="diamond",
             borderWidth=2,
             font={"color": "white"},
         )
 
-        # Belief -> transition event
+        # Edge: Affected Belief -> Transition Event
         if affected_belief_id in g.nodes:
             g.add_edge(
                 affected_belief_id,
                 event_node_id,
-                title=(
-                    f"{transition_type.upper()} at Step {step}"
-                    f"Reason: {reason}"
-                ),
                 color="#ff4d4d",
                 width=2,
                 dashes=True,
             )
 
-        # Future-compatible:
-        #
-        # If a later version contains an explicit resulting_belief_id,
-        # visualize exactly that relationship.
-        #
-        # IMPORTANT:
-        # v0.1 normally has resulting_belief_id=None, so no replacement
-        # belief is inferred from "same step" co-occurrence.
-        if (
-            resulting_belief_id
-            and resulting_belief_id in g.nodes
-        ):
+        # Edge: Transition Event -> Resulting Belief (Used for REFRAMED)
+        if resulting_belief_id and resulting_belief_id in g.nodes:
             g.add_edge(
                 event_node_id,
                 resulting_belief_id,
                 label="RESULTS_IN",
-                title=(
-                    f"Explicit resulting belief: "
-                    f"{resulting_belief_id}"
-                ),
                 color="#aaaaaa",
                 width=2,
             )
 
     # ================================================================
-    # 3. RENDER
+    # 5. RENDER
     # ================================================================
 
-    print(
-        f"Rendering {len(g.nodes)} nodes "
-        f"and {len(g.edges)} edges..."
-    )
+    print(f"Rendering {len(g.nodes)} nodes and {len(g.edges)} edges...")
 
     net = Network(
         height="800px",
@@ -209,19 +212,15 @@ def build_visualization(
 
     net.force_atlas_2based()
 
+    # Loads the NetworkX graph into PyVis
     net.from_nx(g)
-
     net.write_html(output_html)
-
-    print(
-        f"\n[Success] Interactive graph generated: "
-        f"'{output_html}'."
-    )
+    print(f"\n[Success] Interactive graph generated: '{output_html}'.")
 
 
 if __name__ == "__main__":
     print("==================================================")
-    print("      LONGITUDINAL GRAPH VISUALIZER v0.1          ")
+    print("      LONGITUDINAL GRAPH VISUALIZER v0.2          ")
     print("==================================================\n")
 
     build_visualization()

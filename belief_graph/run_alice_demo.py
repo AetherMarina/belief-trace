@@ -141,9 +141,12 @@ def main():
     beliefs_path = os.path.join(output_dir, "beliefs.jsonl")
     transitions_path = os.path.join(output_dir, "transitions.jsonl")
     observations_path = os.path.join(output_dir, "observations.jsonl")
+    core_beliefs_path = os.path.join(output_dir, "core_beliefs.jsonl")
+    surface_to_core_mappings_path = os.path.join(output_dir, "surface_to_core_mappings.jsonl")
 
     engine.export_to_jsonl(beliefs_path=beliefs_path, transitions_path=transitions_path,
-                           observations_path=observations_path)
+                           observations_path=observations_path, core_beliefs_path=core_beliefs_path,
+                           surface_to_core_mappings_path=surface_to_core_mappings_path)
 
     print(f"\n[Success] Demo finished. Check the '{output_dir}' folder for your generated JSONL graphs.")
 

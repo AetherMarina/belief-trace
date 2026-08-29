@@ -148,6 +148,8 @@ def main():
                            observations_path=observations_path, core_beliefs_path=core_beliefs_path,
                            surface_to_core_mappings_path=surface_to_core_mappings_path)
 
+    engine.print_core_metrics_report()
+
     print(f"\n[Success] Demo finished. Check the '{output_dir}' folder for your generated JSONL graphs.")
 
 

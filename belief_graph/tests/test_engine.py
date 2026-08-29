@@ -6,7 +6,7 @@ from belief_graph.core import (
     BeliefStatus,
     ExtractedTriplet,
     InferenceProvenance,
-    TransitionType,
+    TransitionType, CoreBeliefMappingResult,
 )
 from belief_graph.engine import LongitudinalEngine
 from belief_graph.matching import MatchResult, MatchType
@@ -17,11 +17,17 @@ class FakeProvider:
         self,
         triplets=None,
         transition_type=TransitionType.REFRAMED,
+        core_mapping=None,
     ):
         self.triplets = triplets or []
         self.transition_type = transition_type
+        self.core_mapping = core_mapping or CoreBeliefMappingResult(
+            is_core_belief=False,
+            confidence_score=0.0,
+        )
         self.calls = []
         self.classify_calls = []
+        self.core_mapping_calls = []
 
     def extract_beliefs(self, text: str, entity_id: str):
         self.calls.append({
@@ -33,6 +39,10 @@ class FakeProvider:
     def resolve_potential_contradiction(self, old_belief, new_triplet):
         self.classify_calls.append((old_belief, new_triplet))
         return self.transition_type
+
+    def map_to_core_belief(self, triplet):
+        self.core_mapping_calls.append(triplet)
+        return self.core_mapping
 
 
 class FakeEmbedder:

@@ -1,7 +1,7 @@
 import uuid
 from enum import Enum
 from typing import Optional, Dict, Any, List, Protocol, Literal
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, model_validator, computed_field
 
 
 # ========================================================================
@@ -190,7 +190,7 @@ class CoreBelief(BaseModel):
     core_belief_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     entity_id: str
     domain: CoreBeliefDomain
-    label: str
+    label: CoreBeliefLabel
     first_seen_step: int
     last_seen_step: int
     status: BeliefStatus = BeliefStatus.ACTIVE
@@ -207,6 +207,12 @@ class CoreBelief(BaseModel):
             )
 
         return self
+
+    @computed_field
+    @property
+    def active_duration(self) -> int:
+        """Calculates the total step span this core schema has remained active."""
+        return (self.last_seen_step - self.first_seen_step) + 1
 
 
 class SurfaceToCoreMapping(BaseModel):

@@ -1,0 +1,164 @@
+<html>
+    <head>
+        <meta charset="utf-8">
+        
+            <script src="lib/bindings/utils.js"></script>
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/dist/vis-network.min.css" integrity="sha512-WgxfT5LWjfszlPHXRmBWHkV2eceiWTOBvrKCNbdgDYTHrT2AeLCGbF4sZlZw3UMN3WtL0tGUoIAKsu8mllg/XA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/vis-network.min.js" integrity="sha512-LnvoEWDFrqGHlHmDD2101OrLcbsfkrzoSpvtSQtxK3RMnRV0eOkhhBN2dXHKRrUU8p2DGRTk35n4O8nWSVe1mQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+            
+        
+<center>
+<h1></h1>
+</center>
+
+<!-- <link rel="stylesheet" href="../node_modules/vis/dist/vis.min.css" type="text/css" />
+<script type="text/javascript" src="../node_modules/vis/dist/vis.js"> </script>-->
+        <link
+          href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css"
+          rel="stylesheet"
+          integrity="sha384-eOJMYsd53ii+scO/bJGFsiCZc+5NDVN2yr8+0RDqr0Ql0h+rP48ckxlpbzKgwra6"
+          crossorigin="anonymous"
+        />
+        <script
+          src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"
+          integrity="sha384-JEW9xMcG8R+pH31jmWH6WWP0WintQrMb4s7ZOdauHnUtxwoG2vI5DkLtS3qm9Ekf"
+          crossorigin="anonymous"
+        ></script>
+
+
+        <center>
+          <h1></h1>
+        </center>
+        <style type="text/css">
+
+             #mynetwork {
+                 width: 100%;
+                 height: 800px;
+                 background-color: #222222;
+                 border: 1px solid lightgray;
+                 position: relative;
+                 float: left;
+             }
+
+             
+
+             
+
+             
+        </style>
+    </head>
+
+
+    <body>
+        <div class="card" style="width: 100%">
+            
+            
+            <div id="mynetwork" class="card-body"></div>
+        </div>
+
+        
+        
+
+        <script type="text/javascript">
+
+              // initialize global variables.
+              var edges;
+              var nodes;
+              var allNodes;
+              var allEdges;
+              var nodeColors;
+              var originalNodes;
+              var network;
+              var container;
+              var options, data;
+              var filter = {
+                  item : '',
+                  property : '',
+                  value : []
+              };
+
+              
+
+              
+
+              // This method is responsible for drawing the graph, returns the drawn network
+              function drawGraph() {
+                  var container = document.getElementById('mynetwork');
+
+                  
+
+                  // parsing and collecting nodes and edges from the python
+                  nodes = new vis.DataSet([{"borderWidth": 3, "color": {"background": "#00cc66", "border": "white"}, "font": {"color": "white"}, "id": "5228b48c-0f49-4e44-87f0-f904dedcd731", "label": "[Self]\nTHINKS\n[Falling is not alarming]", "shape": "box", "size": 10, "title": "SURFACE BELIEF\nID: 5228b48c-0f49-4e44-87f0-f904dedcd731\nFirst seen: Step 1\nLast seen: Step 1\nStatus: ACTIVE"}, {"borderWidth": 3, "color": {"background": "#9b59b6", "border": "#8e44ad"}, "font": {"bold": true, "color": "white", "size": 16}, "id": "1071909a-e351-412c-ba7b-8f11ecb9b8a6", "label": "CORE: Self\nResilient", "shape": "ellipse", "size": 10, "title": "CORE SCHEMA\nEntity: Alice\nDomain: Self\nLabel: Resilient\nFirst seen: Step 1\nLast seen: Step 1\n---\nDuration: 1 steps\nDistinct manifestations: 1\nRecurrence: 1 total observation(s)\nTransitions: 0 disruption(s)"}, {"borderWidth": 3, "color": {"background": "#00cc66", "border": "white"}, "font": {"color": "white"}, "id": "2a458c5e-ce6d-4438-8ecb-fcefca1694b2", "label": "[Others]\nTHINKS\n[She is brave]", "shape": "box", "size": 10, "title": "SURFACE BELIEF\nID: 2a458c5e-ce6d-4438-8ecb-fcefca1694b2\nFirst seen: Step 1\nLast seen: Step 1\nStatus: ACTIVE"}, {"borderWidth": 3, "color": {"background": "#9b59b6", "border": "#8e44ad"}, "font": {"bold": true, "color": "white", "size": 21}, "id": "0638340e-8044-424c-90f3-43b497257390", "label": "CORE: Others\nSupportive", "shape": "ellipse", "size": 10, "title": "CORE SCHEMA\nEntity: Alice\nDomain: Others\nLabel: Supportive\nFirst seen: Step 1\nLast seen: Step 10\n---\nDuration: 10 steps\nDistinct manifestations: 2\nRecurrence: 2 total observation(s)\nTransitions: 0 disruption(s)"}, {"borderWidth": 3, "color": {"background": "#00cc66", "border": "white"}, "font": {"color": "white"}, "id": "10ee5d4a-8843-407e-89cb-3a2f410ee7f2", "label": "[Self]\nAVOIDS\n[Revealing the fall]", "shape": "box", "size": 10, "title": "SURFACE BELIEF\nID: 10ee5d4a-8843-407e-89cb-3a2f410ee7f2\nFirst seen: Step 1\nLast seen: Step 1\nStatus: ACTIVE"}, {"borderWidth": 3, "color": {"background": "#9b59b6", "border": "#8e44ad"}, "font": {"bold": true, "color": "white", "size": 56}, "id": "60bd0a53-783a-429c-a9da-4e9c3870513f", "label": "CORE: Self\nIncapable", "shape": "ellipse", "size": 10, "title": "CORE SCHEMA\nEntity: Alice\nDomain: Self\nLabel: Incapable\nFirst seen: Step 1\nLast seen: Step 8\n---\nDuration: 8 steps\nDistinct manifestations: 7\nRecurrence: 9 total observation(s)\nTransitions: 0 disruption(s)"}, {"borderWidth": 3, "color": {"background": "#00cc66", "border": "white"}, "font": {"color": "white"}, "id": "843752a5-6efb-459e-944a-102432f23a2d", "label": "[Self]\nQUESTIONING\n[Identity]", "shape": "box", "size": 10, "title": "SURFACE BELIEF\nID: 843752a5-6efb-459e-944a-102432f23a2d\nFirst seen: Step 2\nLast seen: Step 5\nStatus: ACTIVE"}, {"borderWidth": 1, "color": {"background": "#ff4d4d", "border": "white"}, "font": {"color": "white"}, "id": "b5201d21-8c8a-4707-8a50-64f03daa8eeb", "label": "[Self]\nIS\n[Distinct from Mabel]", "shape": "box", "size": 10, "title": "SURFACE BELIEF\nID: b5201d21-8c8a-4707-8a50-64f03daa8eeb\nFirst seen: Step 3\nLast seen: Step 3\nStatus: DEPRECATED"}, {"borderWidth": 2, "color": {"background": "#8b1e1e", "border": "#ff8080"}, "font": {"color": "white"}, "id": "transition::bd92806e-5177-40e6-b036-4311f7f565e5", "label": "REFRAMED\nT4", "shape": "diamond", "size": 10, "title": "Type: REFRAMED\nReason: NLI detected semantic contradiction: new\u2192existing=0.999, existing\u2192new=0.999."}, {"borderWidth": 3, "color": {"background": "#00cc66", "border": "white"}, "font": {"color": "white"}, "id": "0c00e44d-f148-46e0-afff-d857da1aec2d", "label": "[Self]\nHAS\n[Knowledge]", "shape": "box", "size": 10, "title": "SURFACE BELIEF\nID: 0c00e44d-f148-46e0-afff-d857da1aec2d\nFirst seen: Step 3\nLast seen: Step 3\nStatus: ACTIVE"}, {"borderWidth": 3, "color": {"background": "#9b59b6", "border": "#8e44ad"}, "font": {"bold": true, "color": "white", "size": 21}, "id": "e44c51ff-d42e-4df7-a73e-3b7ea3055a24", "label": "CORE: Self\nCapable", "shape": "ellipse", "size": 10, "title": "CORE SCHEMA\nEntity: Alice\nDomain: Self\nLabel: Capable\nFirst seen: Step 3\nLast seen: Step 8\n---\nDuration: 6 steps\nDistinct manifestations: 2\nRecurrence: 2 total observation(s)\nTransitions: 0 disruption(s)"}, {"borderWidth": 3, "color": {"background": "#00cc66", "border": "white"}, "font": {"color": "white"}, "id": "32122fc8-a037-4e13-a902-60d888a9cd5f", "label": "[Self]\nIS\n[Mabel]", "shape": "box", "size": 10, "title": "SURFACE BELIEF\nID: 32122fc8-a037-4e13-a902-60d888a9cd5f\nFirst seen: Step 4\nLast seen: Step 8\nStatus: ACTIVE"}, {"borderWidth": 3, "color": {"background": "#9b59b6", "border": "#8e44ad"}, "font": {"bold": true, "color": "white", "size": 21}, "id": "5fa09a23-0af6-4a4e-bac8-80f858196485", "label": "CORE: Self\nDependent", "shape": "ellipse", "size": 10, "title": "CORE SCHEMA\nEntity: Alice\nDomain: Self\nLabel: Dependent\nFirst seen: Step 4\nLast seen: Step 8\n---\nDuration: 5 steps\nDistinct manifestations: 1\nRecurrence: 2 total observation(s)\nTransitions: 0 disruption(s)"}, {"borderWidth": 3, "color": {"background": "#00cc66", "border": "white"}, "font": {"color": "white"}, "id": "5c75a1f9-9c99-4675-bd54-9bcf45d89089", "label": "[Self]\nCANNOT\n[Explain]", "shape": "box", "size": 10, "title": "SURFACE BELIEF\nID: 5c75a1f9-9c99-4675-bd54-9bcf45d89089\nFirst seen: Step 5\nLast seen: Step 5\nStatus: ACTIVE"}, {"borderWidth": 3, "color": {"background": "#00cc66", "border": "white"}, "font": {"color": "white"}, "id": "6542c56d-5fe4-4820-bd50-1125caf21e8e", "label": "[Self]\nIS\n[Confused]", "shape": "box", "size": 10, "title": "SURFACE BELIEF\nID: 6542c56d-5fe4-4820-bd50-1125caf21e8e\nFirst seen: Step 5\nLast seen: Step 5\nStatus: ACTIVE"}, {"borderWidth": 3, "color": {"background": "#00cc66", "border": "white"}, "font": {"color": "white"}, "id": "c2c45b35-4301-4a66-b925-f530353ef647", "label": "[Self]\nIS\n[Mad]", "shape": "box", "size": 10, "title": "SURFACE BELIEF\nID: c2c45b35-4301-4a66-b925-f530353ef647\nFirst seen: Step 6\nLast seen: Step 7\nStatus: ACTIVE"}, {"borderWidth": 3, "color": {"background": "#00cc66", "border": "white"}, "font": {"color": "white"}, "id": "24429760-dfe7-4c0c-8ee1-f5d0efcc6e45", "label": "[Others]\nARE\n[Mad]", "shape": "box", "size": 10, "title": "SURFACE BELIEF\nID: 24429760-dfe7-4c0c-8ee1-f5d0efcc6e45\nFirst seen: Step 6\nLast seen: Step 6\nStatus: ACTIVE"}, {"borderWidth": 3, "color": {"background": "#9b59b6", "border": "#8e44ad"}, "font": {"bold": true, "color": "white", "size": 26}, "id": "3caa3cd8-9f1a-4398-a104-d8010dacea97", "label": "CORE: Others\nThreatening", "shape": "ellipse", "size": 10, "title": "CORE SCHEMA\nEntity: Alice\nDomain: Others\nLabel: Threatening\nFirst seen: Step 6\nLast seen: Step 9\n---\nDuration: 4 steps\nDistinct manifestations: 3\nRecurrence: 3 total observation(s)\nTransitions: 0 disruption(s)"}, {"borderWidth": 3, "color": {"background": "#00cc66", "border": "white"}, "font": {"color": "white"}, "id": "27066b17-832f-4fec-9eab-60c9c147567c", "label": "[Others]\nARE\n[All]", "shape": "box", "size": 10, "title": "SURFACE BELIEF\nID: 27066b17-832f-4fec-9eab-60c9c147567c\nFirst seen: Step 6\nLast seen: Step 6\nStatus: ACTIVE"}, {"borderWidth": 3, "color": {"background": "#00cc66", "border": "white"}, "font": {"color": "white"}, "id": "9042804e-cf2a-446e-bacb-0b5f7efcc772", "label": "[Self]\nOUGHT_TO\n[Not Go Among Mad People]", "shape": "box", "size": 10, "title": "SURFACE BELIEF\nID: 9042804e-cf2a-446e-bacb-0b5f7efcc772\nFirst seen: Step 6\nLast seen: Step 6\nStatus: ACTIVE"}, {"borderWidth": 3, "color": {"background": "#00cc66", "border": "white"}, "font": {"color": "white"}, "id": "35f8cee5-dd88-4cb6-a239-b21f96bed732", "label": "[Self]\nFEELS\n[Fear]", "shape": "box", "size": 10, "title": "SURFACE BELIEF\nID: 35f8cee5-dd88-4cb6-a239-b21f96bed732\nFirst seen: Step 8\nLast seen: Step 9\nStatus: ACTIVE"}, {"borderWidth": 3, "color": {"background": "#9b59b6", "border": "#8e44ad"}, "font": {"bold": true, "color": "white", "size": 21}, "id": "2418a0bc-2a23-4bff-a476-de01ef9c09b1", "label": "CORE: Self\nVulnerable", "shape": "ellipse", "size": 10, "title": "CORE SCHEMA\nEntity: Alice\nDomain: Self\nLabel: Vulnerable\nFirst seen: Step 8\nLast seen: Step 9\n---\nDuration: 2 steps\nDistinct manifestations: 1\nRecurrence: 2 total observation(s)\nTransitions: 0 disruption(s)"}, {"borderWidth": 3, "color": {"background": "#00cc66", "border": "white"}, "font": {"color": "white"}, "id": "b2ec61a6-e1f6-4a3d-8716-026a40de21b9", "label": "[Self]\nASSESSES\n[Own Courage]", "shape": "box", "size": 10, "title": "SURFACE BELIEF\nID: b2ec61a6-e1f6-4a3d-8716-026a40de21b9\nFirst seen: Step 8\nLast seen: Step 8\nStatus: ACTIVE"}, {"borderWidth": 3, "color": {"background": "#00cc66", "border": "white"}, "font": {"color": "white"}, "id": "ae663a09-b898-4376-b488-aff049c65e03", "label": "[Self]\nBELIEVES\n[It\u0027s no business of mine]", "shape": "box", "size": 10, "title": "SURFACE BELIEF\nID: ae663a09-b898-4376-b488-aff049c65e03\nFirst seen: Step 8\nLast seen: Step 8\nStatus: ACTIVE"}, {"borderWidth": 3, "color": {"background": "#00cc66", "border": "white"}, "font": {"color": "white"}, "id": "245357f6-160d-49f8-95f9-c8be560d4cd3", "label": "[Others]\nBEHAVE\n[Fond of Beheading]", "shape": "box", "size": 10, "title": "SURFACE BELIEF\nID: 245357f6-160d-49f8-95f9-c8be560d4cd3\nFirst seen: Step 9\nLast seen: Step 9\nStatus: ACTIVE"}, {"borderWidth": 3, "color": {"background": "#00cc66", "border": "white"}, "font": {"color": "white"}, "id": "05e0558e-c80d-416d-8e72-8f4dc8fd7494", "label": "[World]\nHAS\n[High Risk of Death]", "shape": "box", "size": 10, "title": "SURFACE BELIEF\nID: 05e0558e-c80d-416d-8e72-8f4dc8fd7494\nFirst seen: Step 9\nLast seen: Step 9\nStatus: ACTIVE"}, {"borderWidth": 3, "color": {"background": "#9b59b6", "border": "#8e44ad"}, "font": {"bold": true, "color": "white", "size": 16}, "id": "eff7917e-8504-4814-8287-ab8a5a0c43c8", "label": "CORE: World\nDangerous", "shape": "ellipse", "size": 10, "title": "CORE SCHEMA\nEntity: Alice\nDomain: World\nLabel: Dangerous\nFirst seen: Step 9\nLast seen: Step 9\n---\nDuration: 1 steps\nDistinct manifestations: 1\nRecurrence: 1 total observation(s)\nTransitions: 0 disruption(s)"}, {"borderWidth": 3, "color": {"background": "#00cc66", "border": "white"}, "font": {"color": "white"}, "id": "780a79af-f185-4102-9046-f9e8bb6fb9dc", "label": "[Others]\nCARES_FOR\n[Alice]", "shape": "box", "size": 10, "title": "SURFACE BELIEF\nID: 780a79af-f185-4102-9046-f9e8bb6fb9dc\nFirst seen: Step 10\nLast seen: Step 10\nStatus: ACTIVE"}, {"borderWidth": 3, "color": {"background": "#00cc66", "border": "white"}, "font": {"color": "white"}, "id": "112cb57e-40f9-42a4-8ed2-9881b5930c4b", "label": "[Self]\nIS\n[Worthless]", "shape": "box", "size": 10, "title": "SURFACE BELIEF\nID: 112cb57e-40f9-42a4-8ed2-9881b5930c4b\nFirst seen: Step 10\nLast seen: Step 10\nStatus: ACTIVE"}, {"borderWidth": 3, "color": {"background": "#9b59b6", "border": "#8e44ad"}, "font": {"bold": true, "color": "white", "size": 16}, "id": "611299f8-b089-4c36-8c4f-241571a41279", "label": "CORE: Self\nWorthy", "shape": "ellipse", "size": 10, "title": "CORE SCHEMA\nEntity: Alice\nDomain: Self\nLabel: Worthy\nFirst seen: Step 10\nLast seen: Step 10\n---\nDuration: 1 steps\nDistinct manifestations: 1\nRecurrence: 1 total observation(s)\nTransitions: 0 disruption(s)"}, {"borderWidth": 3, "color": {"background": "#00cc66", "border": "white"}, "font": {"color": "white"}, "id": "e01cd39d-227f-40e7-abfb-b51b48183aa4", "label": "[Self]\nTHINKS\n[She will appear brave]", "shape": "box", "size": 10, "title": "SURFACE BELIEF\nID: e01cd39d-227f-40e7-abfb-b51b48183aa4\nFirst seen: Step 1\nLast seen: Step 1\nStatus: ACTIVE"}, {"borderWidth": 3, "color": {"background": "#00cc66", "border": "white"}, "font": {"color": "white"}, "id": "4979d71d-5f1d-45a9-a454-02ac009656c3", "label": "[Self]\nPERCEIVES\n[Change]", "shape": "box", "size": 10, "title": "SURFACE BELIEF\nID: 4979d71d-5f1d-45a9-a454-02ac009656c3\nFirst seen: Step 2\nLast seen: Step 2\nStatus: ACTIVE"}, {"borderWidth": 3, "color": {"background": "#00cc66", "border": "white"}, "font": {"color": "white"}, "id": "8b5d5b8f-8ccf-4eac-a4c3-f46d77af94f4", "label": "[World]\nIS\n[Puzzle]", "shape": "box", "size": 10, "title": "SURFACE BELIEF\nID: 8b5d5b8f-8ccf-4eac-a4c3-f46d77af94f4\nFirst seen: Step 2\nLast seen: Step 7\nStatus: ACTIVE"}, {"borderWidth": 3, "color": {"background": "#00cc66", "border": "white"}, "font": {"color": "white"}, "id": "7e39ee0e-61be-4cde-bfa8-30926398e405", "label": "[Self]\nIS\n[Distinct from Ada]", "shape": "box", "size": 10, "title": "SURFACE BELIEF\nID: 7e39ee0e-61be-4cde-bfa8-30926398e405\nFirst seen: Step 3\nLast seen: Step 3\nStatus: ACTIVE"}, {"borderWidth": 3, "color": {"background": "#00cc66", "border": "white"}, "font": {"color": "white"}, "id": "f45f7a69-d932-40ba-9c7b-e6798c7d026c", "label": "[Self]\nIS\n[Distinct from Mabel (by identity)]", "shape": "box", "size": 10, "title": "SURFACE BELIEF\nID: f45f7a69-d932-40ba-9c7b-e6798c7d026c\nFirst seen: Step 3\nLast seen: Step 3\nStatus: ACTIVE"}, {"borderWidth": 3, "color": {"background": "#00cc66", "border": "white"}, "font": {"color": "white"}, "id": "6eea3e2f-7967-48da-b1f5-3354c4248da7", "label": "[Self]\nIS\n[Distinct from Mabel (by pronoun)]", "shape": "box", "size": 10, "title": "SURFACE BELIEF\nID: 6eea3e2f-7967-48da-b1f5-3354c4248da7\nFirst seen: Step 3\nLast seen: Step 3\nStatus: ACTIVE"}, {"borderWidth": 3, "color": {"background": "#00cc66", "border": "white"}, "font": {"color": "white"}, "id": "890f834d-18ab-489d-bc51-81c57651bcc6", "label": "[Self]\nWANTS\n[Stay Down Here]", "shape": "box", "size": 10, "title": "SURFACE BELIEF\nID: 890f834d-18ab-489d-bc51-81c57651bcc6\nFirst seen: Step 4\nLast seen: Step 4\nStatus: ACTIVE"}, {"borderWidth": 3, "color": {"background": "#00cc66", "border": "white"}, "font": {"color": "white"}, "id": "d0543915-6811-42e8-bf18-e7d9408bd6d8", "label": "[World]\nHAS\n[Poky Little House]", "shape": "box", "size": 10, "title": "SURFACE BELIEF\nID: d0543915-6811-42e8-bf18-e7d9408bd6d8\nFirst seen: Step 4\nLast seen: Step 4\nStatus: ACTIVE"}, {"borderWidth": 3, "color": {"background": "#00cc66", "border": "white"}, "font": {"color": "white"}, "id": "979464d3-c23c-43b9-801f-4e47ad9f4665", "label": "[World]\nHAS\n[Next to No Toys]", "shape": "box", "size": 10, "title": "SURFACE BELIEF\nID: 979464d3-c23c-43b9-801f-4e47ad9f4665\nFirst seen: Step 4\nLast seen: Step 4\nStatus: ACTIVE"}, {"borderWidth": 3, "color": {"background": "#00cc66", "border": "white"}, "font": {"color": "white"}, "id": "c81c53f7-e658-4377-ab28-ae93c46d8f8f", "label": "[World]\nHAS\n[Ever So Many Lessons]", "shape": "box", "size": 10, "title": "SURFACE BELIEF\nID: c81c53f7-e658-4377-ab28-ae93c46d8f8f\nFirst seen: Step 4\nLast seen: Step 4\nStatus: ACTIVE"}, {"borderWidth": 3, "color": {"background": "#00cc66", "border": "white"}, "font": {"color": "white"}, "id": "1168373b-31db-4b84-8b79-3442ccdc6d20", "label": "[World]\nIS\n[Different Sizes]", "shape": "box", "size": 10, "title": "SURFACE BELIEF\nID: 1168373b-31db-4b84-8b79-3442ccdc6d20\nFirst seen: Step 5\nLast seen: Step 5\nStatus: ACTIVE"}, {"borderWidth": 3, "color": {"background": "#00cc66", "border": "white"}, "font": {"color": "white"}, "id": "8dc7a13b-6c41-4569-a1b3-699e8d8694fe", "label": "[Self]\nTHINKS\n[Curiosity]", "shape": "box", "size": 10, "title": "SURFACE BELIEF\nID: 8dc7a13b-6c41-4569-a1b3-699e8d8694fe\nFirst seen: Step 7\nLast seen: Step 8\nStatus: ACTIVE"}, {"borderWidth": 3, "color": {"background": "#00cc66", "border": "white"}, "font": {"color": "white"}, "id": "05371731-04a9-489b-9163-9d29962750cd", "label": "[World]\nCONSISTS_OF\n[Cards]", "shape": "box", "size": 10, "title": "SURFACE BELIEF\nID: 05371731-04a9-489b-9163-9d29962750cd\nFirst seen: Step 8\nLast seen: Step 8\nStatus: ACTIVE"}, {"borderWidth": 3, "color": {"background": "#00cc66", "border": "white"}, "font": {"color": "white"}, "id": "bae95743-d43c-4866-ae11-7c591753e6a5", "label": "[Self]\nASSESSES\n[Cards as insignificant]", "shape": "box", "size": 10, "title": "SURFACE BELIEF\nID: bae95743-d43c-4866-ae11-7c591753e6a5\nFirst seen: Step 8\nLast seen: Step 8\nStatus: ACTIVE"}, {"borderWidth": 3, "color": {"background": "#00cc66", "border": "white"}, "font": {"color": "white"}, "id": "50d827e5-1148-424b-8bde-62cb7f8fd35c", "label": "[Self]\nCONCERNS\n[Potential Dispute]", "shape": "box", "size": 10, "title": "SURFACE BELIEF\nID: 50d827e5-1148-424b-8bde-62cb7f8fd35c\nFirst seen: Step 9\nLast seen: Step 9\nStatus: ACTIVE"}]);
+                  edges = new vis.DataSet([{"arrows": "to", "color": "#9b59b6", "dashes": true, "from": "5228b48c-0f49-4e44-87f0-f904dedcd731", "label": "MAPS_TO", "title": "Confidence: 0.85", "to": "1071909a-e351-412c-ba7b-8f11ecb9b8a6", "width": 1}, {"arrows": "to", "color": "#9b59b6", "dashes": true, "from": "2a458c5e-ce6d-4438-8ecb-fcefca1694b2", "label": "MAPS_TO", "title": "Confidence: 0.8", "to": "0638340e-8044-424c-90f3-43b497257390", "width": 1}, {"arrows": "to", "color": "#9b59b6", "dashes": true, "from": "10ee5d4a-8843-407e-89cb-3a2f410ee7f2", "label": "MAPS_TO", "title": "Confidence: 0.85", "to": "60bd0a53-783a-429c-a9da-4e9c3870513f", "width": 1}, {"arrows": "to", "color": "#9b59b6", "dashes": true, "from": "843752a5-6efb-459e-944a-102432f23a2d", "label": "MAPS_TO", "title": "Confidence: 0.85", "to": "60bd0a53-783a-429c-a9da-4e9c3870513f", "width": 1}, {"arrows": "to", "color": "#ff4d4d", "dashes": true, "from": "b5201d21-8c8a-4707-8a50-64f03daa8eeb", "to": "transition::bd92806e-5177-40e6-b036-4311f7f565e5", "width": 1}, {"arrows": "to", "color": "#9b59b6", "dashes": true, "from": "0c00e44d-f148-46e0-afff-d857da1aec2d", "label": "MAPS_TO", "title": "Confidence: 0.8", "to": "e44c51ff-d42e-4df7-a73e-3b7ea3055a24", "width": 1}, {"arrows": "to", "color": "#9b59b6", "dashes": true, "from": "32122fc8-a037-4e13-a902-60d888a9cd5f", "label": "MAPS_TO", "title": "Confidence: 0.8", "to": "5fa09a23-0af6-4a4e-bac8-80f858196485", "width": 1}, {"arrows": "to", "color": "#9b59b6", "dashes": true, "from": "5c75a1f9-9c99-4675-bd54-9bcf45d89089", "label": "MAPS_TO", "title": "Confidence: 0.85", "to": "60bd0a53-783a-429c-a9da-4e9c3870513f", "width": 1}, {"arrows": "to", "color": "#9b59b6", "dashes": true, "from": "6542c56d-5fe4-4820-bd50-1125caf21e8e", "label": "MAPS_TO", "title": "Confidence: 0.85", "to": "60bd0a53-783a-429c-a9da-4e9c3870513f", "width": 1}, {"arrows": "to", "color": "#9b59b6", "dashes": true, "from": "c2c45b35-4301-4a66-b925-f530353ef647", "label": "MAPS_TO", "title": "Confidence: 0.85", "to": "60bd0a53-783a-429c-a9da-4e9c3870513f", "width": 1}, {"arrows": "to", "color": "#9b59b6", "dashes": true, "from": "24429760-dfe7-4c0c-8ee1-f5d0efcc6e45", "label": "MAPS_TO", "title": "Confidence: 0.8", "to": "3caa3cd8-9f1a-4398-a104-d8010dacea97", "width": 1}, {"arrows": "to", "color": "#9b59b6", "dashes": true, "from": "27066b17-832f-4fec-9eab-60c9c147567c", "label": "MAPS_TO", "title": "Confidence: 0.8", "to": "3caa3cd8-9f1a-4398-a104-d8010dacea97", "width": 1}, {"arrows": "to", "color": "#9b59b6", "dashes": true, "from": "9042804e-cf2a-446e-bacb-0b5f7efcc772", "label": "MAPS_TO", "title": "Confidence: 0.85", "to": "60bd0a53-783a-429c-a9da-4e9c3870513f", "width": 1}, {"arrows": "to", "color": "#9b59b6", "dashes": true, "from": "35f8cee5-dd88-4cb6-a239-b21f96bed732", "label": "MAPS_TO", "title": "Confidence: 0.85", "to": "2418a0bc-2a23-4bff-a476-de01ef9c09b1", "width": 1}, {"arrows": "to", "color": "#9b59b6", "dashes": true, "from": "b2ec61a6-e1f6-4a3d-8716-026a40de21b9", "label": "MAPS_TO", "title": "Confidence: 0.85", "to": "e44c51ff-d42e-4df7-a73e-3b7ea3055a24", "width": 1}, {"arrows": "to", "color": "#9b59b6", "dashes": true, "from": "ae663a09-b898-4376-b488-aff049c65e03", "label": "MAPS_TO", "title": "Confidence: 0.85", "to": "60bd0a53-783a-429c-a9da-4e9c3870513f", "width": 1}, {"arrows": "to", "color": "#9b59b6", "dashes": true, "from": "245357f6-160d-49f8-95f9-c8be560d4cd3", "label": "MAPS_TO", "title": "Confidence: 0.85", "to": "3caa3cd8-9f1a-4398-a104-d8010dacea97", "width": 1}, {"arrows": "to", "color": "#9b59b6", "dashes": true, "from": "05e0558e-c80d-416d-8e72-8f4dc8fd7494", "label": "MAPS_TO", "title": "Confidence: 0.85", "to": "eff7917e-8504-4814-8287-ab8a5a0c43c8", "width": 1}, {"arrows": "to", "color": "#9b59b6", "dashes": true, "from": "780a79af-f185-4102-9046-f9e8bb6fb9dc", "label": "MAPS_TO", "title": "Confidence: 0.8", "to": "0638340e-8044-424c-90f3-43b497257390", "width": 1}, {"arrows": "to", "color": "#9b59b6", "dashes": true, "from": "112cb57e-40f9-42a4-8ed2-9881b5930c4b", "label": "MAPS_TO", "title": "Confidence: 0.85", "to": "611299f8-b089-4c36-8c4f-241571a41279", "width": 1}, {"arrows": "to", "color": "#aaaaaa", "from": "transition::bd92806e-5177-40e6-b036-4311f7f565e5", "label": "RESULTS_IN", "to": "32122fc8-a037-4e13-a902-60d888a9cd5f", "width": 1}]);
+
+                  nodeColors = {};
+                  allNodes = nodes.get({ returnType: "Object" });
+                  for (nodeId in allNodes) {
+                    nodeColors[nodeId] = allNodes[nodeId].color;
+                  }
+                  allEdges = edges.get({ returnType: "Object" });
+                  // adding nodes and edges to the graph
+                  data = {nodes: nodes, edges: edges};
+
+                  var options = {
+    "configure": {
+        "enabled": false
+    },
+    "edges": {
+        "color": {
+            "inherit": true
+        },
+        "smooth": {
+            "enabled": true,
+            "type": "dynamic"
+        }
+    },
+    "interaction": {
+        "dragNodes": true,
+        "hideEdgesOnDrag": false,
+        "hideNodesOnDrag": false
+    },
+    "physics": {
+        "enabled": true,
+        "forceAtlas2Based": {
+            "avoidOverlap": 0,
+            "centralGravity": 0.01,
+            "damping": 0.4,
+            "gravitationalConstant": -50,
+            "springConstant": 0.08,
+            "springLength": 100
+        },
+        "solver": "forceAtlas2Based",
+        "stabilization": {
+            "enabled": true,
+            "fit": true,
+            "iterations": 1000,
+            "onlyDynamicEdges": false,
+            "updateInterval": 50
+        }
+    }
+};
+
+                  
+
+
+                  
+
+                  network = new vis.Network(container, data, options);
+
+                  
+
+                  
+
+                  
+
+
+                  
+
+                  return network;
+
+              }
+              drawGraph();
+        </script>
+    </body>
+</html>

@@ -148,8 +148,11 @@ class OllamaProvider(LLMProvider):
                 return None
             elif result == "SHATTERED":
                 return TransitionType.SHATTERED
-            else:
+            elif "REFRAMED" in result:
                 return TransitionType.REFRAMED
+
+            logger.warning("Unexpected verifier output: %s", result)
+            return None
 
         except Exception as e:
             logger.error(f"[OllamaProvider Error] Classification failed: {e}")
@@ -169,14 +172,22 @@ class OllamaProvider(LLMProvider):
         If the thought is just a situational reaction (e.g., "My boss is angry today"), 
         set 'is_core_belief' to false and leave domain/label null.
 
-        If the thought represents a deep psychological schema (e.g., "People always reject me"), 
-        set 'is_core_belief' to true and classify it using EXACTLY one domain and one label 
-        from the following taxonomy:
+        If the thought represents a higher-level general belief about Self, World, or Others 
+        (e.g., "People always reject me"), set 'is_core_belief' to true 
+        and classify it using EXACTLY one domain and one label from the following taxonomy:
 
         {taxonomy_instructions}
+        
+        Do NOT invent new labels.
 
         You must return a JSON object with keys: 'is_core_belief' (boolean), 'domain' (string or null), 
         'label' (string or null), and 'confidence_score' (float).
+        
+        EXAMPLE 1 (Valid Core Belief):
+        {{"is_core_belief": true, "domain": "Self", "label": "Vulnerable", "confidence_score": 0.9}}
+
+        EXAMPLE 2 (Situational/Non-Core):
+        {{"is_core_belief": false, "domain": null, "label": null, "confidence_score": 0.0}}
         """
 
         user_prompt = (

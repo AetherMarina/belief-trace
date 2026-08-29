@@ -1,10 +1,11 @@
-import sys
-import os
-
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-from core import LongitudinalEngine, BeliefStatus
-from providers import OllamaProvider
+from belief_graph.config import DEFAULT_MODEL
+from belief_graph.core import BeliefStatus, InferenceProvenance
+from belief_graph.embedder import OllamaEmbedder
+from belief_graph.engine import LongitudinalEngine
+from belief_graph.matching import SemanticBeliefMatcher
+from belief_graph.nli_matcher import NliMatcherProvider
+from belief_graph.providers import OllamaProvider
+from belief_graph.qdrant_memory import QdrantBeliefMemory
 
 
 def get_golden_set():
@@ -21,8 +22,8 @@ def get_golden_set():
         },
         {
             "step": 2,
-            "source_id": "eval_ch2_identity_crisis",
-            "text": "'I wonder if I've been changed in the night? Let me think: was I the same when I got up this morning? I almost think I can remember feeling a little different. But if I'm not the same, the next question is, Who in the world am I?'",
+            "source_id": "eval_ch2_cowardice",
+            "text": "'Oh, how wrong I was!' thought Alice. 'Tumbling down stairs is the most terrifying thing in the world, and I am not brave at all. I am a complete coward!'",
             "expected_conflict": True,
             "min_extracted_beliefs": 1
         }
@@ -34,9 +35,36 @@ def run_evaluation():
     print("   RUNNING MINIMAL GOLDEN EVALUATION SET v0.1     ")
     print("==================================================\n")
 
+    print(f"[System] Initializing Ollama Provider ({DEFAULT_MODEL})...")
+    try:
+        provider = OllamaProvider()
+    except Exception as e:
+        print(f"[Error] Failed to initialize provider: {e}")
+        return
     golden_set = get_golden_set()
-    provider = OllamaProvider()
-    engine = LongitudinalEngine(llm_provider=provider)
+    memory = QdrantBeliefMemory()
+    embedder = OllamaEmbedder(model="mxbai-embed-large")
+    nli_provider = NliMatcherProvider()
+    matcher = SemanticBeliefMatcher(provider=nli_provider)
+    extraction_provenance = InferenceProvenance(
+        model=provider.model,
+        prompt_version="surface-v0.2",
+        temperature=0.0,
+    )
+    transition_provenance = InferenceProvenance(
+        model=provider.verifier_model,
+        prompt_version="transition-v0.2",
+        temperature=0.0,
+    )
+    print("[System] Initializing Longitudinal Engine...")
+    engine = LongitudinalEngine(
+        llm_provider=provider,
+        memory=memory,
+        embedder=embedder,
+        matcher=matcher,
+        provenance=extraction_provenance,
+        transition_provenance=transition_provenance
+    )
 
     passed_tests = 0
     total_tests = 0
@@ -88,18 +116,19 @@ def run_evaluation():
     # 4. TEST: Referential Integrity (Consistency of IDs)
     print("\n--- Evaluating Global Referential Integrity ---")
     integrity_passed = True
-    for t_id, transition in engine.transitions.items():
+    for transition in engine.transitions:
         # Does the affected belief exist in the database?
         if transition.affected_belief_id not in engine.beliefs:
             print(
-                f"❌ [Test 4] Failed! Transition {t_id} references non-existent belief {transition.affected_belief_id}.")
+                f"❌ [Test 4] Failed! Transition {transition.transition_id} "
+                f"references non-existent belief {transition.affected_belief_id}.")
             integrity_passed = False
             break
 
         # Is the first_seen_step of the older belief logically before or equal to the transition step?
         affected_belief = engine.beliefs[transition.affected_belief_id]
         if affected_belief.first_seen_step > transition.step:
-            print(f"❌ [Test 4] Failed! Time paradox in transition {t_id}.")
+            print(f"❌ [Test 4] Failed! Time paradox in transition {transition.transition_id}.")
             integrity_passed = False
             break
 

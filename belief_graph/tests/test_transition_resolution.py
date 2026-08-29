@@ -24,7 +24,7 @@ def provenance():
 
 @pytest.fixture
 def provider():
-    return OllamaProvider(model="qwen3:8b")
+    return OllamaProvider()
 
 
 @pytest.mark.integration

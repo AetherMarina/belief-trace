@@ -1,4 +1,4 @@
-# 🕸️ Longitudinal Belief Graph (v0.1)
+# 🕸️ Longitudinal Belief Graph (v0.2)
 
 **An experimental framework for tracking, modeling and visualizing inferred belief transitions across longitudinal narratives.**
 
@@ -6,17 +6,20 @@
 
 ## Overview
 
-Traditional knowledge graphs struggle with temporal dynamics and conflicting facts. The **Longitudinal Belief Graph** is designed specifically to track how an entity's core beliefs (`[Self]`, `[World]`, `[Others]`) evolve, shatter, or mature over time across sequential narrative steps ($T_n$).
+Traditional knowledge graphs struggle with temporal dynamics and psychological depth. 
+The **Longitudinal Belief Graph** tracks how inferred surface beliefs about `[Self]`, `[World]` and `[Others]` map onto normalized core-belief categories, and how those beliefs recur and change across sequential narrative steps ($T_n$).
 
 Instead of overwriting old data, this framework uses a **Cognitive Arbiter** to detect narrative conflicts, deprecate outdated beliefs, and map inferred state transitions (e.g., `SHATTERED`) while maintaining strict inference provenance.
 
 ## Key Features
 
 *   **Temporal State Machine ($T_n$ Engine):** Processes narrative steps chronologically, evaluating each new narrative against only currently `ACTIVE` beliefs.
+*   **Dual-Layer Cognitive Architecture:** Differentiates between transient surface thoughts (Triplets) and entrenched Core Belief schemas via dynamic `SurfaceToCoreMapping` edges.
 *   **Reified Belief Nodes:** Every belief is a unique entity with a distinct lifecycle (`first_seen_step`, `last_seen_step`, `status`), avoiding the "parallel edge" problem of traditional multi-graphs.
 *   **Inference Provenance:** Strict Pydantic schemas enforce that every inferred belief and transition records the exact LLM model, prompt version, and temperature associated with its extraction.
-*   **Decoupled LLM Architecture:** Powered by a clean `LLMProvider` protocol. Currently defaults to local Ollama (`gemma3:4b`) via the OpenAI SDK, but easily extensible to any API.
+*   **Decoupled LLM Architecture:** A clean LLMProvider protocol separates model-dependent inference from graph logic. The local Ollama implementation supports independent models for surface/core inference and contradiction verification.
 *   **Interactive Visualization:** Renders the longitudinal evolution of the mind into an interactive, physics-based HTML graph using PyVis and NetworkX.
+*   **Longitudinal Metrics:** Computes `active_duration`, `transition_count`, `distinct_manifestations`, and `recurrence_count`, providing quantitative signals for studying persistence, recurrence, and cognitive change over time.
 
 ---
 
@@ -25,7 +28,7 @@ Instead of overwriting old data, this framework uses a **Cognitive Arbiter** to 
 ### Prerequisites
 - Python 3.10+
 - [Ollama](https://ollama.ai/) installed locally.
-- - A local copy of a model, for example gemma3:
+- A local copy of a model, for example gemma3:
   ```bash
   ollama pull gemma3:4b
   ```
@@ -56,9 +59,9 @@ python run_alice_demo.py
 
 1. The engine extracts Alice's initial absolute certainties (e.g., bravery).
 2. It processes subsequent chapters where her physical reality changes.
-3. The Cognitive Arbiter detects conflicts with active beliefs; the engine deprecates affected beliefs and creates SHATTERED and REFRAMED transitions. In v0.2, REFRAMED is used as a coarse transition category for non-negation contradictions, while SHATTERED represents direct negation or explicit abandonment of an existing belief.
-4. The output is saved as flat, machine-readable beliefs.jsonl and transitions.jsonl files in the outputs/ directory, which is git-ignored. 
-5. A frozen v0.1 example is available under examples/alice/.
+3. The Cognitive Arbiter detects conflicts with active beliefs; the engine deprecates affected beliefs and creates SHATTERED and REFRAMED transitions. In v0.2, SHATTERED represents direct negation or explicit abandonment of an existing belief without introducing a substantive replacement, while REFRAMED represents contradictions that introduce an alternative belief.
+4. The output is saved as flat, machine-readable artifacts in the `outputs/` directory: `beliefs.jsonl`, `transitions.jsonl`, `core_beliefs.jsonl`, `observations.jsonl` and `surface_to_core_mappings.jsonl`, which is git-ignored.
+5. Frozen v0.1 and v0.2 examples are available under examples/alice/.
 
 ### 3. Visualize the Graph
 
@@ -68,9 +71,10 @@ python visualize.py
 ```
 
 Open `outputs/graph.html` in your web browser.
-* Green Nodes: Active beliefs.
-* Red Nodes: Deprecated/Shattered beliefs.
-* Hover: View the narrative source, inference provenance, and model-generated rationale behind a shattered belief.
+* `Surface Beliefs (Boxes)`: Green (Active), Red (Deprecated).
+* `Core Schemas (Purple Ellipses)`: Node size scales dynamically based on how often the schema is triggered by surface thoughts (recurrence).
+* `Edges`: Solid lines represent state transitions; dashed purple lines represent MAPS_TO relationships linking surface thoughts to core schemas.
+* `Hover`: View the narrative source, inference provenance, and longitudinal metrics.
 
 ### Evaluation
 
@@ -89,26 +93,31 @@ belief_graph/
 │   └──eval_golden.py    
 ├── examples/              
 │   └── alice/            # Generated artifacts (beliefs.jsonl, transitions.jsonl, graph.html)
-├── config.py             # Global constants and default model configurations
-├── core.py               # Pydantic schemas, Protocols, and the core TnEngine
-├── providers.py          # LLMProvider implementations (OllamaProvider)
+├── src/belief_graph/              
+│   ├── config.py         # Global constants and default model configurations
+│   ├── core.py           # Pydantic schemas, Protocols
+│   ├── embedder.py       # Embedder protocol and implementation
+│   ├── engine.py         # The core TnEngine
+│   ├── matching.py       # Semantic belief matching and SAME/DIFFERENT/CONTRADICTS decisions 
+│   ├── memory.py         # Belief memory interface and retrieval contracts
+│   ├── nli_matcher.py    # NLI-based semantic entailment and contradiction classifier
+│   ├── providers.py      # LLMProvider implementations (OllamaProvider)
+│   └── qdrant_memory.py  # Qdrant-backed vector storage and semantic candidate retrieval
 ├── run_alice_demo.py     # End-to-end execution script with demo dataset
 ├── visualize.py          # NetworkX to PyVis HTML renderer
 ├── README.md             # Belief Graph documentation
 └── requirements.txt      # Python dependencies for module
 ```
 
-### v0.1 Scope
+### What's New in v0.2
 
-v0.1 intentionally keeps the transition model minimal:
-- Beliefs are extracted independently at each narrative step.
-- Transition evaluation compares the current ACTIVE belief state against the raw new narrative evidence.
-- SHATTERED is the only supported transition type.
-- Belief recurrence/deduplication and direct replacement links are deferred to v0.2.
+*   **Core Belief Taxonomies:** Implemented strict Pydantic models for domain-driven psychological schemas.
+*   **Many-to-One Abstraction:** Multiple surface beliefs can map to the same normalized core-belief node through explicit `SurfaceToCoreMapping` edges, while the original surface beliefs remain preserved.
+*   **New Transition Dynamics:** Introduced the `REFRAMED` transition type to model nuanced cognitive shifts and belief modifications (expanding upon the v0.1 limitation of only `SHATTERED` transitions).
+*   **Terminal Analytics:** Added `print_core_metrics_report()` for immediate longitudinal core-belief analysis.
 
 ### Future Roadmap (v0.3+)
 
 * Advanced Transition Types: Adding CHALLENGED, REINFORCED, and WEAKENED edges.
-* BeliefTrace Integration: Adding core belief extraction layer.
 * Document Adapters: Automated POV extraction and speaker diarization for full-length books and therapy transcripts.
 * Extended Cognitive Networks: Transitioning from broad psychological categories to explicit entity-resolution mapping. Future versions will track the protagonist's evolving beliefs regarding specific significant figures and instrumental objects, modeling the exact relational network that shapes their cognitive state.

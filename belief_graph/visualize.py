@@ -102,26 +102,39 @@ def build_visualization(
         domain = cb.get("domain", "Unknown")
         label_val = cb.get("label", "Unknown")
 
+        # 1. Define the label that appears directly on the node
         node_label = f"CORE: {domain}\n{label_val}"
 
+        # 2. Fetch the metrics
+        recurrence = cb.get("recurrence_count", 0)
+
+        # 3. Calculate dynamic size based on recurrence (Base 16 + 5 per recurrence)
+        dynamic_size = 11 + (recurrence * 5)
+
+        # 4. Build the hover tooltip including the new distinct_manifestations metric
         hover_text = (
             f"CORE SCHEMA\n"
             f"Entity: {cb.get('entity_id')}\n"
             f"Domain: {domain}\n"
             f"Label: {label_val}\n"
             f"First seen: Step {cb.get('first_seen_step')}\n"
-            f"Last seen: Step {cb.get('last_seen_step')}"
+            f"Last seen: Step {cb.get('last_seen_step')}\n"
+            f"---\n"
+            f"Duration: {cb.get('active_duration', 0)} steps\n"
+            f"Distinct manifestations: {cb.get('distinct_manifestations', 0)}\n"
+            f"Recurrence: {recurrence} total observation(s)\n"
+            f"Transitions: {cb.get('transition_count', 0)} disruption(s)"
         )
 
+        # 5. Apply the variables to the graph node!
         g.add_node(
             cb_id,
             label=node_label,
             title=hover_text,
-            color={"background": "#9b59b6", "border": "#8e44ad"},  # Deep purple
-            shape="ellipse",  # Visually distinct from surface boxes
+            color={"background": "#9b59b6", "border": "#8e44ad"},
+            shape="ellipse",
             borderWidth=3,
-            size=35,  # Slightly larger to act as visual anchors
-            font={"color": "white", "size": 16, "bold": True},
+            font={"color": "white", "size": dynamic_size, "bold": True},
         )
 
     # ================================================================
@@ -214,6 +227,11 @@ def build_visualization(
 
     # Loads the NetworkX graph into PyVis
     net.from_nx(g)
+    for node in net.nodes:
+        nx_node_data = g.nodes[node["id"]]
+        if "font" in nx_node_data:
+            node["font"] = nx_node_data["font"]
+
     net.write_html(output_html)
     print(f"\n[Success] Interactive graph generated: '{output_html}'.")
 

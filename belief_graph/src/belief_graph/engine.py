@@ -1,3 +1,4 @@
+import json
 import logging
 from typing import List, Dict, Optional
 from .core import (
@@ -67,7 +68,54 @@ class LongitudinalEngine:
             if t.affected_belief_id == belief_id or t.resulting_belief_id == belief_id
         ]
 
-        # --- Main Processing Loop ---
+    def get_distinct_manifestations(self, core_belief_id: str) -> int:
+        """Counts how many different surface beliefs map to this core schema."""
+        surface_ids = {
+            m.surface_belief_id
+            for m in self.surface_to_core_mappings.values()
+            if m.core_belief_id == core_belief_id
+        }
+
+        return len(surface_ids)
+
+    def get_recurrence_count(self, core_belief_id: str) -> int:
+        """Counts how many total times was this belief triggered."""
+        surface_ids = {
+            m.surface_belief_id
+            for m in self.surface_to_core_mappings.values()
+            if m.core_belief_id == core_belief_id
+        }
+
+        return sum(
+            1 for obs in self.observations.values()
+            if obs.belief_id in surface_ids
+        )
+
+    def get_transition_count(self, core_belief_id: str) -> int:
+        """Counts how many times surface beliefs mapped to this core schema were disrupted."""
+        mapped_surface_ids = {
+            m.surface_belief_id for m in self.surface_to_core_mappings.values()
+            if m.core_belief_id == core_belief_id
+        }
+        return sum(
+            1 for t in self.transitions
+            if t.affected_belief_id in mapped_surface_ids
+        )
+
+    def get_core_belief_metrics(self, core_belief_id: str) -> dict:
+        """Computes longitudinal metrics for a specific core belief on demand."""
+        core_belief = self.core_beliefs.get(core_belief_id)
+        if not core_belief:
+            return {}
+
+        return {
+            "distinct_manifestations": self.get_distinct_manifestations(core_belief_id),
+            "recurrence_count": self.get_recurrence_count(core_belief_id),
+            "active_duration": core_belief.active_duration,
+            "transition_count": self.get_transition_count(core_belief_id)
+        }
+
+    # --- Main Processing Loop ---
 
     def process_step(
             self,
@@ -166,6 +214,12 @@ class LongitudinalEngine:
                     match_result.reason, step, source_id, evidence_span
                 )
 
+    def _update_core_from_surface_recurrence(self, surface_belief_id: str, step: int):
+        for mapping in self.surface_to_core_mappings.values():
+            if mapping.surface_belief_id == surface_belief_id:
+                core_belief = self.core_beliefs[mapping.core_belief_id]
+                core_belief.last_seen_step = step
+
     def _handle_same(self, matched_id: str, step: int, source_id: str, evidence: str):
         """Reinforces an existing belief with a new observation."""
         belief = self.beliefs[matched_id]
@@ -180,8 +234,10 @@ class LongitudinalEngine:
         )
         self.observations[observation.observation_id] = observation
 
-        # Only update the last_seen_step metadata in vector db
+        # Update the last_seen_step metadata in vector db
         self.memory.update_metadata(belief)
+        # Propagate recurrence to linked core belief
+        self._update_core_from_surface_recurrence(belief.belief_id, step)
 
     def _handle_different(self, entity_id: str, triplet: ExtractedTriplet, embedding: List[float], step: int,
                           source_id: str,  evidence: str):
@@ -345,8 +401,13 @@ class LongitudinalEngine:
                 f.write(observation.model_dump_json() + "\n")
 
         with open(core_beliefs_path, "w", encoding="utf-8") as f:
-            for core_belief in self.core_beliefs.values():
-                f.write(core_belief.model_dump_json() + "\n")
+            for cb_id, cb in self.core_beliefs.items():
+                cb_dict = cb.model_dump(mode='json')
+                metrics = self.get_core_belief_metrics(cb_id)
+                cb_dict["distinct_manifestations"] = metrics["distinct_manifestations"]
+                cb_dict["recurrence_count"] = metrics["recurrence_count"]
+                cb_dict["transition_count"] = metrics["transition_count"]
+                f.write(json.dumps(cb_dict) + "\n")
 
         with open(surface_to_core_mappings_path, "w", encoding="utf-8") as f:
             for mapping in self.surface_to_core_mappings.values():
@@ -354,3 +415,35 @@ class LongitudinalEngine:
 
         logger.info(f"State successfully exported to '{beliefs_path}', '{transitions_path}', '{observations_path}',"
                     f" '{core_beliefs_path}' and '{surface_to_core_mappings_path}'")
+
+    def print_core_metrics_report(self):
+        """Generates and prints a longitudinal metrics report for all core schemas."""
+
+        table_width = 95
+
+        print("\n" + "=" * table_width)
+        print(" LONGITUDINAL CORE BELIEF METRICS REPORT")
+        print("=" * table_width)
+
+        if not self.core_beliefs:
+            print(" No core beliefs found in the current graph state.")
+            print("=" * table_width + "\n")
+            return
+
+        # Increased the width for DISTINCT MANIFESTATIONS from 12 to 25
+        header = (f"{'DOMAIN: LABEL':<25} | {'DURATION':<10} | {'DISTINCT MANIFESTATIONS':<25} | "
+                  f"{'RECURRENCE':<12} | {'TRANSITIONS':<12}")
+        print(header)
+        print("-" * table_width)
+
+        for cb_id, cb in self.core_beliefs.items():
+            metrics = self.get_core_belief_metrics(cb_id)
+
+            schema_name = f"{cb.domain.value}: {cb.label}"
+
+            # Ensure the metrics row perfectly matches the updated header widths
+            print(f"{schema_name:<25} | {metrics['active_duration']:<10} | "
+                  f"{metrics['distinct_manifestations']:<25} | "
+                  f"{metrics['recurrence_count']:<12} | {metrics['transition_count']:<12}")
+
+        print("=" * table_width + "\n")

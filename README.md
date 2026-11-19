@@ -1,3 +1,5 @@
+![BeliefTrace banner illustrating surface beliefs and core abstractions as interconnected graph layers](assets/belief-trace-banner.jpg) 
+
 # 👣 BeliefTrace
 
 BeliefTrace is an experimental research project for modeling how latent cognitive beliefs can be extracted from narrative language and traced over time.

@@ -5,7 +5,13 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "belief-graph"
 version = "0.2.0"
-requires-python = ">=3.10"
+description = "Tracing structured cognitive beliefs from narrative language and modeling how they evolve over time."
+readme = "README.md"
+license = { file = "LICENSE" }
+authors = [
+  { name="Marina Kaličanin"}
+]
+requires-python = ">=3.12"
 
 [project.optional-dependencies]
 dev = [
